@@ -7,8 +7,10 @@ or deliberately dismiss it.
 - Several Google accounts at once; an event you were invited to from more than
   one account appears once.
 - The menu bar shows the next meeting and a countdown (`Weekly sync · in 12m`).
-- The menu lists today's and tomorrow's meetings; choosing one opens its Meet,
-  Zoom, Teams or Webex link in the browser (or the event page when it has none).
+- The menu lists today's and tomorrow's meetings, coloured by account. Each
+  opens a submenu with its time, place, people and description, and actions to
+  join its Meet, Zoom, Teams or Webex link, copy the link, or open the event in
+  Google Calendar.
 - The cut-in appears `n` minutes before the start (configurable, default 2) on
   every display. Plugging or unplugging a display or changing the resolution
   rebuilds it to fit the new screens.
@@ -25,14 +27,11 @@ just install   # build Calendrop.app and copy it into /Applications
 
 ## Try it without Google
 
-```sh
-just demo
-```
-
-launches Calendrop with `--demo`: the menu fills with sample meetings, and
-**Settings → Appearance → Try Full Screen** shows the cut-in with a single
-meeting, meetings at the same time, or meetings close together. Nothing is
-read from or written to Google, the shared configuration or the Keychain.
+A build made without the Google OAuth client (see below) cannot sign in to real
+accounts. Its **Add Account…** adds sample accounts instead, with sample
+calendars and meetings, so everything else — labels, colours, calendar choice,
+the menu and the cut-in — can be tried. Sample accounts stay on this Mac and
+never reach the settings shared through iCloud.
 
 ## Add Google accounts
 
@@ -42,8 +41,8 @@ browser. Repeat for each Google account.
 ### Building with Google sign-in
 
 Sign-in needs a Google OAuth client embedded in the app. A build without one
-works in every other way but cannot add Google accounts. Whoever builds Calendrop
-sets one up once:
+offers sample accounts instead (see above). Whoever builds Calendrop sets one up
+once:
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), create a
    project and enable the **Google Calendar API**.

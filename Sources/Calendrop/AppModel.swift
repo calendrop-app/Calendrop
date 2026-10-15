@@ -11,34 +11,36 @@ final class AppModel: ObservableObject {
 
   @Published private(set) var config: SharedConfig
   @Published private(set) var meetings: [Meeting] = []
+  /// Every calendar each account can read, as last fetched; settings choose among them.
+  @Published private(set) var calendars: [String: [CalendarRef]] = [:]
   @Published private(set) var accountStates: [String: AccountState] = [:]
   @Published private(set) var isSigningIn = false
   @Published var lastError: String?
 
   let store: ConfigStore
-  /// Demo mode runs on `DemoCalendar` and never reads or writes Google, the shared
-  /// config file, the Keychain or the persisted acknowledgements.
-  let isDemo: Bool
-  /// Embedded by `just bundle`; nil in a build made without the maintainer's client.
-  let oauthClient = OAuthClient(infoDictionary: Bundle.main.infoDictionary ?? [:])
-  static let missingClientMessage =
-    "This build of Calendrop has no Google sign-in. Build it with the OAuth client as the README describes."
-  private let service = GoogleCalendarService()
+  private let source: CalendarSource
   private var isRefreshing = false
-  private var demoAcknowledged: Set<String> = []
+  private var refreshAgain = false
+  /// Each account's meetings as last fetched, before merging, so an offline refresh can
+  /// re-apply a changed calendar choice without losing copies merged away.
+  private var lastFetched: [String: [Meeting]] = [:]
   private static let acknowledgedKey = "acknowledgedMeetings"
 
-  init(isDemo: Bool = false, store: ConfigStore = ConfigStore(url: ConfigStore.defaultURL())) {
-    self.isDemo = isDemo
+  init(source: CalendarSource, store: ConfigStore) {
+    self.source = source
     self.store = store
-    if isDemo {
-      var demo = SharedConfig()
-      demo.accounts = DemoCalendar.accounts
-      self.config = demo
-    } else {
-      self.config = store.load()
+    self.config = store.load()
+    if config.accounts.isEmpty {
+      updateConfig { config in
+        for preset in source.presetAccounts {
+          config.addAccount(preset.email)
+          config.updateAccount(preset.email) { $0.label = preset.label }
+        }
+      }
     }
   }
+
+  var sourceNotice: String? { source.notice }
 
   var policy: CutinPolicy {
     CutinPolicy(
@@ -47,13 +49,11 @@ final class AppModel: ObservableObject {
   }
 
   var needsAttention: Bool {
-    if isDemo { return false }
-    return oauthClient == nil || config.accounts.isEmpty || accountStates.values.contains { $0 != .ok }
+    config.accounts.isEmpty || accountStates.values.contains { $0 != .ok }
   }
 
   func state(of account: String) -> AccountState {
-    if isDemo { return .ok }
-    return accountStates[account] ?? (Keychain.refreshToken(for: account) == nil ? .needsSignIn : .ok)
+    accountStates[account] ?? (source.isSignedIn(account) ? .ok : .needsSignIn)
   }
 
   // MARK: Shared config
@@ -63,11 +63,19 @@ final class AppModel: ObservableObject {
     mutate(&next)
     guard next != config else { return }
     config = next
-    if isDemo { return }
     do {
       try store.save(next)
     } catch {
       lastError = "Could not save \(store.url.path): \(error.localizedDescription)"
+    }
+  }
+
+  /// Changes one account's settings; a change of calendars takes effect at once.
+  func updateAccount(_ email: String, _ change: (inout AccountSettings) -> Void) {
+    let before = config.account(email)?.calendarIDs
+    updateConfig { $0.updateAccount(email, change) }
+    if config.account(email)?.calendarIDs != before {
+      Task { await refresh() }
     }
   }
 
@@ -80,18 +88,10 @@ final class AppModel: ObservableObject {
   // MARK: Accounts
 
   func signIn(hint: String?) async {
-    if isDemo {
-      lastError = "Sign-in is disabled in demo mode."
-      return
-    }
-    // Settings already shows `missingClientMessage` whenever the client is absent.
-    guard let client = oauthClient else { return }
     isSigningIn = true
     defer { isSigningIn = false }
     do {
-      let (email, refreshToken) = try await LoopbackAuthenticator.authorize(client: client, loginHint: hint)
-      try Keychain.setRefreshToken(refreshToken, for: email)
-      service.forget(account: email)
+      let email = try await source.signIn(hint: hint, existing: config.accounts.map(\.email))
       updateConfig { $0.addAccount(email) }
       accountStates[email] = .ok
       lastError = nil
@@ -101,13 +101,12 @@ final class AppModel: ObservableObject {
     }
   }
 
-  /// Removes the account from every Mac (through the shared config) and drops this Mac's token.
+  /// Removes the account from every Mac (through the shared config) and drops what this Mac holds for it.
   func remove(account: String) {
-    if !isDemo {
-      Keychain.deleteRefreshToken(for: account)
-      service.forget(account: account)
-    }
+    source.forget(account)
     accountStates[account] = nil
+    calendars[account] = nil
+    lastFetched[account] = nil
     updateConfig { $0.removeAccount(account) }
     meetings.removeAll { $0.account == account }
   }
@@ -115,48 +114,53 @@ final class AppModel: ObservableObject {
   // MARK: Meetings
 
   func refresh() async {
-    if isDemo {
-      // The periodic refresh must not shift the schedule the user is watching.
-      if meetings.isEmpty { meetings = DemoCalendar.meetings(now: Date()) }
+    guard !isRefreshing else {
+      // A settings change during a fetch must not be lost to the fetch in flight.
+      refreshAgain = true
       return
     }
-    guard !isRefreshing else { return }
     isRefreshing = true
-    defer { isRefreshing = false }
+    defer {
+      isRefreshing = false
+      if refreshAgain {
+        refreshAgain = false
+        Task { await refresh() }
+      }
+    }
 
     reloadConfigFromDisk()
-    guard let client = oauthClient else {
-      meetings = []
-      return
-    }
-    let calendar = Calendar.current
-    let from = calendar.startOfDay(for: Date())
-    let to = calendar.date(byAdding: .day, value: 2, to: from)!
+    let day = Calendar.current
+    let from = day.startOfDay(for: Date())
+    let to = day.date(byAdding: .day, value: 2, to: from)!
 
     var lists: [[Meeting]] = []
     var states: [String: AccountState] = [:]
+    var fetchedCalendars: [String: [CalendarRef]] = [:]
     for account in config.accounts {
       do {
-        lists.append(try await service.meetings(account: account, client: client, from: from, to: to))
-        states[account] = .ok
+        let all = try await source.calendars(account: account.email)
+        fetchedCalendars[account.email] = all
+        let used = all.filter(account.uses)
+        let fetched = try await source.meetings(account: account.email, calendars: used, from: from, to: to)
+        lastFetched[account.email] = fetched
+        lists.append(fetched)
+        states[account.email] = .ok
       } catch CalendarError.needsSignIn {
-        states[account] = .needsSignIn
+        states[account.email] = .needsSignIn
       } catch {
-        // Keep what we already know so cut-ins still fire while offline.
-        lists.append(meetings.filter { $0.account == account })
-        states[account] = .error(error.localizedDescription)
+        // Keep what we already know so cut-ins still fire while offline, but
+        // honour the calendar choice made since.
+        let known = calendars[account.email] ?? []
+        lists.append((lastFetched[account.email] ?? []).filter { account.uses($0, among: known) })
+        fetchedCalendars[account.email] = calendars[account.email]
+        states[account.email] = .error(error.localizedDescription)
       }
     }
     // An account removed while its fetch was in flight must not come back.
-    let current = Set(config.accounts)
+    let current = Set(config.accounts.map(\.email))
     meetings = Meeting.merge(lists.map { $0.filter { current.contains($0.account) } })
+    calendars = fetchedCalendars.filter { current.contains($0.key) }
     accountStates = states.filter { current.contains($0.key) }
-  }
-
-  /// The meetings allowed to cut in. The demo schedule only fills the menu; cut-ins
-  /// are tried from the appearance settings instead.
-  var cutInCandidates: [Meeting] {
-    isDemo ? [] : meetings
   }
 
   // MARK: Acknowledgements
@@ -164,15 +168,10 @@ final class AppModel: ObservableObject {
   /// Meeting occurrences the user has joined or dismissed, persisted so a relaunch
   /// does not interrupt again.
   var acknowledged: Set<String> {
-    if isDemo { return demoAcknowledged }
-    return Set((UserDefaults.standard.dictionary(forKey: Self.acknowledgedKey) ?? [:]).keys)
+    Set((UserDefaults.standard.dictionary(forKey: Self.acknowledgedKey) ?? [:]).keys)
   }
 
   func acknowledge(_ meetings: [Meeting]) {
-    if isDemo {
-      demoAcknowledged.formUnion(meetings.map(\.acknowledgementKey))
-      return
-    }
     var stored = UserDefaults.standard.dictionary(forKey: Self.acknowledgedKey) as? [String: Double] ?? [:]
     for m in meetings { stored[m.acknowledgementKey] = m.start.timeIntervalSince1970 }
     let cutoff = Date().addingTimeInterval(-2 * 24 * 3600).timeIntervalSince1970

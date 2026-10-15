@@ -4,6 +4,7 @@ import SwiftUI
 struct CutinView: View {
   let meetings: [Meeting]
   let theme: CutinTheme
+  var accounts: [AccountSettings] = []
   let onJoin: (Meeting) -> Void
   let onDismiss: () -> Void
 
@@ -34,6 +35,7 @@ struct CutinView: View {
     .fontDesign(theme.fontDesign.swiftUI)
     .environment(\.colorScheme, theme.backgroundTop.isLight ? .light : .dark)
     .environment(\.cutinPalette, palette)
+    .environment(\.cutinAccounts, accounts)
   }
 }
 
@@ -63,6 +65,75 @@ extension EnvironmentValues {
   var cutinPalette: CutinPalette {
     get { self[CutinPaletteKey.self] }
     set { self[CutinPaletteKey.self] = newValue }
+  }
+}
+
+/// Where the meeting is, who is coming and the start of its description: enough to
+/// decide whether to join without opening the calendar.
+private struct MeetingDetails: View {
+  let meeting: Meeting
+  let noteLines: Int
+  let alignment: HorizontalAlignment
+  @Environment(\.cutinPalette) private var palette
+
+  var body: some View {
+    let textAlignment: TextAlignment = alignment == .center ? .center : .leading
+    VStack(alignment: alignment, spacing: 6) {
+      let facts = [
+        meeting.location.map { ("mappin.and.ellipse", $0) },
+        meeting.attendeeSummary.map { ("person.2", $0) },
+      ].compactMap { $0 }
+      if !facts.isEmpty {
+        HStack(spacing: 18) {
+          ForEach(facts, id: \.0) { symbol, text in
+            Label(text, systemImage: symbol).lineLimit(1)
+          }
+        }
+        .foregroundStyle(palette.text.opacity(0.75))
+      }
+      if let notes = meeting.notes {
+        Text(notes)
+          .lineLimit(noteLines)
+          .multilineTextAlignment(textAlignment)
+          .foregroundStyle(palette.text.opacity(0.6))
+      }
+    }
+  }
+}
+
+/// Whose meeting it is: the account's colour and label, and the calendar it is on.
+private struct AccountBadge: View {
+  let meeting: Meeting
+  @Environment(\.cutinPalette) private var palette
+  @Environment(\.cutinAccounts) private var accounts
+
+  var body: some View {
+    let account = accounts.first { $0.email == meeting.account }
+    HStack(spacing: 6) {
+      Circle()
+        .fill(account.map { Color($0.color) } ?? palette.text.opacity(0.4))
+        .frame(width: 10, height: 10)
+      Text("\(account?.displayName ?? meeting.account) · \(meeting.calendarName)")
+        .foregroundStyle(palette.text.opacity(0.6))
+        .lineLimit(1)
+    }
+  }
+}
+
+private struct CutinAccountsKey: EnvironmentKey {
+  static let defaultValue: [AccountSettings] = []
+}
+
+extension EnvironmentValues {
+  var cutinAccounts: [AccountSettings] {
+    get { self[CutinAccountsKey.self] }
+    set { self[CutinAccountsKey.self] = newValue }
+  }
+}
+
+extension NSColor {
+  convenience init(_ color: ThemeColor) {
+    self.init(srgbRed: color.red, green: color.green, blue: color.blue, alpha: 1)
   }
 }
 
@@ -114,9 +185,15 @@ private struct SingleMeetingView: View {
           .font(.system(size: 48, weight: .semibold))
           .multilineTextAlignment(.center)
           .lineLimit(2)
-        Text("\(CutinStyle.timeRange(meeting))  ·  \(meeting.account)")
-          .font(.system(size: 18))
-          .foregroundStyle(palette.text.opacity(0.6))
+        HStack(spacing: 14) {
+          Text(CutinStyle.timeRange(meeting))
+            .foregroundStyle(palette.text.opacity(0.6))
+          AccountBadge(meeting: meeting)
+        }
+        .font(.system(size: 18))
+        MeetingDetails(meeting: meeting, noteLines: 4, alignment: .center)
+          .font(.system(size: 17))
+          .frame(maxWidth: 760)
         JoinButton(meeting: meeting, large: true, onJoin: onJoin)
           .keyboardShortcut(.defaultAction)
           .padding(.top, 8)
@@ -197,8 +274,7 @@ private struct MeetingRow: View {
           .font(.system(size: 26, weight: .semibold))
           .lineLimit(2)
         HStack(spacing: 8) {
-          Text(meeting.account)
-            .foregroundStyle(palette.text.opacity(0.6))
+          AccountBadge(meeting: meeting)
           if overlapping {
             Text("Overlaps")
               .padding(.horizontal, 8)
@@ -208,6 +284,8 @@ private struct MeetingRow: View {
           }
         }
         .font(.system(size: 15))
+        MeetingDetails(meeting: meeting, noteLines: 2, alignment: .leading)
+          .font(.system(size: 14))
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       JoinButton(meeting: meeting, large: false, onJoin: onJoin)

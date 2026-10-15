@@ -33,6 +33,16 @@ import Testing
     #expect(query(url)["authuser"] == "me+work@example.com")
   }
 
+  @Test func opensTheEventPageAsTheAccountEvenWhenThereIsAJoinLink() {
+    let url = meeting(
+      join: "https://meet.google.com/abc-defg-hij", html: "https://www.google.com/calendar/event?eid=xyz"
+    )
+    .eventURL
+    #expect(url?.path == "/calendar/event")
+    #expect(query(url) == ["eid": "xyz", "authuser": "me+work@example.com"])
+    #expect(meeting(join: "https://meet.google.com/abc-defg-hij").eventURL == nil)
+  }
+
   @Test func opensTheGoogleCalendarEventAsTheAccountWhenThereIsNoJoinLink() {
     let url = meeting(join: nil, html: "https://www.google.com/calendar/event?eid=xyz").openURL
     #expect(query(url) == ["eid": "xyz", "authuser": "me+work@example.com"])

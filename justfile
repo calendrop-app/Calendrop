@@ -47,22 +47,18 @@ bundle:
     cp "$(swift build -c release --show-bin-path)/{{ app_name }}" {{ bundle }}/Contents/MacOS/{{ app_name }}
     cp Resources/Info.plist {{ bundle }}/Contents/Info.plist
     # The Google OAuth client comes from the environment so it never lands in the
-    # repository. Without it the app still works, but cannot add Google accounts.
+    # repository. Without it the app offers sample accounts instead of Google sign-in.
     if [[ -n "${CALENDROP_GOOGLE_CLIENT_ID:-}" && -n "${CALENDROP_GOOGLE_CLIENT_SECRET:-}" ]]; then \
       plutil -insert CalendropGoogleClientID -string "$CALENDROP_GOOGLE_CLIENT_ID" {{ bundle }}/Contents/Info.plist; \
       plutil -insert CalendropGoogleClientSecret -string "$CALENDROP_GOOGLE_CLIENT_SECRET" {{ bundle }}/Contents/Info.plist; \
     else \
-      echo "warning: CALENDROP_GOOGLE_CLIENT_ID / CALENDROP_GOOGLE_CLIENT_SECRET not set; this build cannot add Google accounts" >&2; \
+      echo "warning: CALENDROP_GOOGLE_CLIENT_ID / CALENDROP_GOOGLE_CLIENT_SECRET not set; this build offers sample accounts instead of Google sign-in" >&2; \
     fi
     codesign --force --sign - {{ bundle }}
 
 # Build the bundle and launch it.
 run: bundle
     open {{ bundle }}
-
-# Build the bundle and launch it on sample meetings, without Google.
-demo: bundle
-    open -n {{ bundle }} --args --demo
 
 # Copy the bundle into /Applications.
 install: bundle

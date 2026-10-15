@@ -9,7 +9,7 @@ import SwiftUI
 struct SettingsView: View {
   @ObservedObject var model: AppModel
   /// Shows the cut-in full screen with sample meetings.
-  let onTry: (DemoCalendar.Scenario) -> Void
+  let onTry: (SampleCalendar.Scenario) -> Void
   @State private var page: SettingsPage = .general
 
   var body: some View {
@@ -75,9 +75,6 @@ private struct GeneralPage: View {
   @ObservedObject var model: AppModel
 
   var body: some View {
-    if model.isDemo {
-      DemoNotice()
-    }
     SettingsGroup("Cut-in") {
       SettingsRow(
         "Show before a meeting",
@@ -114,76 +111,6 @@ private struct GeneralPage: View {
   }
 }
 
-private struct AccountsPage: View {
-  @ObservedObject var model: AppModel
-
-  var body: some View {
-    if model.isDemo {
-      DemoNotice()
-    }
-    SettingsGroup(
-      "Google accounts",
-      note: "Calendrop reads the calendars you have ticked in Google Calendar. Sign-in happens in your browser."
-    ) {
-      if model.config.accounts.isEmpty {
-        SettingsRow("No accounts yet", description: "Add an account to see its meetings.") { EmptyView() }
-      }
-      ForEach(model.config.accounts, id: \.self) { account in
-        AccountRow(model: model, account: account)
-      }
-    } footer: {
-      Button {
-        Task { await model.signIn(hint: nil) }
-      } label: {
-        Label(model.isSigningIn ? "Waiting for the browser…" : "Add Account…", systemImage: "plus")
-      }
-      .disabled(model.isDemo || model.oauthClient == nil || model.isSigningIn)
-    }
-
-    if model.oauthClient == nil, !model.isDemo {
-      SettingsWarning(message: AppModel.missingClientMessage)
-    }
-
-    if let error = model.lastError {
-      SettingsWarning(message: error)
-    }
-  }
-}
-
-private struct AccountRow: View {
-  @ObservedObject var model: AppModel
-  let account: String
-
-  var body: some View {
-    let state = model.state(of: account)
-    SettingsRow(account, description: status(state), descriptionColor: color(state)) {
-      HStack(spacing: 8) {
-        if state != .ok {
-          Button("Sign In…") { Task { await model.signIn(hint: account) } }
-            .disabled(model.isDemo || model.oauthClient == nil || model.isSigningIn)
-        }
-        Button("Remove", role: .destructive) { model.remove(account: account) }
-      }
-    }
-  }
-
-  private func status(_ state: AppModel.AccountState) -> String {
-    switch state {
-    case .ok: "Signed in on this Mac"
-    case .needsSignIn: "Sign-in required on this Mac"
-    case .error(let message): message
-    }
-  }
-
-  private func color(_ state: AppModel.AccountState) -> Color {
-    switch state {
-    case .ok: .secondary
-    case .needsSignIn: .orange
-    case .error: .red
-    }
-  }
-}
-
 private struct SyncPage: View {
   @ObservedObject var model: AppModel
 
@@ -191,13 +118,13 @@ private struct SyncPage: View {
     SettingsGroup(
       "Shared settings",
       note:
-        "Your accounts and settings follow you to every Mac signed in to the same iCloud. Sign-in tokens never leave this Mac's Keychain, so each Mac signs in to each account once."
+        "Accounts and settings live in the file below. On iCloud Drive it follows you to every Mac signed in to the same iCloud. Sign-in tokens never leave this Mac's Keychain, so each Mac signs in to each account once."
     ) {
       SettingsRow("Settings file", description: model.store.url.path) {
         Button("Show in Finder") {
           NSWorkspace.shared.activateFileViewerSelecting([model.store.url])
         }
-        .disabled(model.isDemo || !FileManager.default.fileExists(atPath: model.store.url.path))
+        .disabled(!FileManager.default.fileExists(atPath: model.store.url.path))
       }
     }
   }
@@ -231,14 +158,6 @@ private struct AboutPage: View {
       .font(.callout)
       .foregroundStyle(.secondary)
       .frame(maxWidth: .infinity)
-  }
-}
-
-private struct DemoNotice: View {
-  var body: some View {
-    SettingsWarning(
-      message: "Demo mode — showing sample meetings. Changes are forgotten on quit and Google is never contacted.",
-      symbol: "theatermasks")
   }
 }
 

@@ -19,7 +19,8 @@ import Testing
   @Test func roundTripsAndCreatesDirectories() throws {
     let store = ConfigStore(url: try tempDir().appendingPathComponent("nested/config.json"))
     var config = SharedConfig()
-    config.accounts = ["a@example.com", "b@example.com"]
+    config.addAccount("a@example.com")
+    config.addAccount("b@example.com")
     config.leadMinutes = 5
     try store.save(config)
     #expect(store.load() == config)
@@ -29,7 +30,7 @@ import Testing
     let url = try tempDir().appendingPathComponent("config.json")
     try Data(#"{"accounts":["a@example.com"],"clientID":"left over","futureKey":1}"#.utf8).write(to: url)
     let config = ConfigStore(url: url).load()
-    #expect(config.accounts == ["a@example.com"])
+    #expect(config.accounts.map(\.email) == ["a@example.com"])
     #expect(config.leadMinutes == 2)
   }
 
@@ -51,7 +52,7 @@ import Testing
     var config = SharedConfig()
     config.addAccount("Me@Example.com")
     config.addAccount("me@example.com")
-    #expect(config.accounts == ["me@example.com"])
+    #expect(config.accounts.map(\.email) == ["me@example.com"])
     config.removeAccount("ME@example.com")
     #expect(config.accounts.isEmpty)
   }
@@ -62,5 +63,15 @@ import Testing
     let cloud = home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
     try FileManager.default.createDirectory(at: cloud, withIntermediateDirectories: true)
     #expect(ConfigStore.defaultURL(home: home) == cloud.appendingPathComponent("Calendrop/config.json"))
+  }
+
+  @Test func keepsSampleAccountsOnThisMacEvenWithICloudDrive() throws {
+    let home = try tempDir()
+    try FileManager.default.createDirectory(
+      at: home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs"), withIntermediateDirectories: true
+    )
+    let url = ConfigStore.sampleURL(home: home)
+    #expect(url == home.appendingPathComponent("Library/Application Support/Calendrop/sample-config.json"))
+    #expect(url != ConfigStore.defaultURL(home: home))
   }
 }

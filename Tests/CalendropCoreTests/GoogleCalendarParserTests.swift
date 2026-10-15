@@ -6,7 +6,8 @@ import Testing
 @Suite struct GoogleCalendarParserTests {
   private func parse(_ json: String) throws -> [Meeting] {
     try GoogleCalendarParser.meetings(
-      fromEvents: Data(json.utf8), account: "me@example.com", calendarName: "Work")
+      fromEvents: Data(json.utf8), account: "me@example.com",
+      calendar: CalendarRef(id: "work-calendar", name: "Work", isSelectedInGoogle: true))
   }
 
   @Test func parsesTimedEvent() throws {
@@ -29,6 +30,7 @@ import Testing
     #expect(m.htmlLink == URL(string: "https://www.google.com/calendar/event?eid=1"))
     #expect(m.account == "me@example.com")
     #expect(m.calendarName == "Work")
+    #expect(m.calendarID == "work-calendar")
     #expect(m.uid == "uid1@google.com")
   }
 
@@ -90,13 +92,13 @@ import Testing
     #expect(try GoogleCalendarParser.nextPageToken(from: Data(#"{"items":[]}"#.utf8)) == nil)
   }
 
-  @Test func skipsPrimaryCalendarTheUserUnticked() throws {
+  @Test func reportsAPrimaryCalendarTheUserUntickedAsUnselected() throws {
     let calendars = try GoogleCalendarParser.calendars(
       fromCalendarList: Data(#"{"items":[{"id":"me@example.com","primary":true}]}"#.utf8))
-    #expect(calendars.isEmpty)
+    #expect(calendars.map(\.isSelectedInGoogle) == [false])
   }
 
-  @Test func parsesSelectedCalendars() throws {
+  @Test func parsesEveryCalendarWithItsGoogleSelection() throws {
     let calendars = try GoogleCalendarParser.calendars(
       fromCalendarList: Data(
         """
@@ -106,7 +108,11 @@ import Testing
           {"id":"team@group.calendar.google.com","summary":"Team","summaryOverride":"チーム","selected":true}
         ]}
         """.utf8))
-    #expect(calendars.map(\.id) == ["me@example.com", "team@group.calendar.google.com"])
-    #expect(calendars.map(\.name) == ["me@example.com", "チーム"])
+    #expect(
+      calendars.map(\.id) == [
+        "me@example.com", "team#holiday@group.v.calendar.google.com", "team@group.calendar.google.com",
+      ])
+    #expect(calendars.map(\.name) == ["me@example.com", "Holidays", "チーム"])
+    #expect(calendars.map(\.isSelectedInGoogle) == [true, false, true])
   }
 }

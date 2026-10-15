@@ -16,6 +16,9 @@ final class CutinPresenter {
   var theme = CutinPreset.allCases[0].theme {
     didSet { if theme != oldValue, isShowing { rebuild() } }
   }
+  var accounts: [AccountSettings] = [] {
+    didSet { if accounts != oldValue, isShowing { rebuild() } }
+  }
   private var windows: [NSWindow] = []
   private var observers: [NSObjectProtocol] = []
 
@@ -88,6 +91,7 @@ final class CutinPresenter {
       rootView: CutinView(
         meetings: meetings,
         theme: theme,
+        accounts: accounts,
         onJoin: { [weak self] in self?.onJoin?($0) },
         onDismiss: { [weak self] in self?.onDismiss?() }
       ))

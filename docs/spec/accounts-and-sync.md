@@ -8,7 +8,12 @@ between the user's Macs.
 - Signing in happens in the default browser; nothing has to be configured
   first. Calendrop only ever asks for read-only calendar access and the account's
   email address.
-- Meetings come from the calendars the user has selected in Google Calendar.
+- Each account has a label and a colour that the menu, the cut-in and settings
+  show in place of its address.
+- Meetings come from the calendars the user chose for each account. Until the
+  user chooses, those ticked in Google Calendar are used.
+- Removing an account asks for confirmation first, since it removes the
+  account from every Mac that shares the configuration.
 - An event visible through several accounts is shown once.
 - Google Meet links and Google Calendar event pages open as the account the
   meeting came from, even when the browser defaults to another Google account.
@@ -27,10 +32,22 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 
 | Key | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `accounts` | array of strings | `[]` | Email addresses of the accounts to read, in lower case |
+| `accounts` | array of objects | `[]` | The accounts to read; see below |
 | `leadMinutes` | integer | `2` | Minutes before the start that the cut-in appears |
 | `cutInWithoutJoinLink` | boolean | `false` | Whether meetings without a video link cut in too |
 | `appearance` | object | the Midnight preset | How the cut-in looks; see below |
+
+`accounts` holds one object per account:
+
+| Key | Type | Meaning |
+| --- | --- | --- |
+| `email` | string | The account's address; required |
+| `label` | string | Shown instead of the address |
+| `color` | string | `#RRGGBB`; a colour not yet used by another account when missing |
+| `calendarIDs` | array of strings | Google Calendar IDs to read; when missing, those ticked in Google Calendar |
+
+An entry may also be a bare address string, as older versions wrote. An entry
+that cannot be read is skipped without affecting the others.
 
 `appearance` holds:
 

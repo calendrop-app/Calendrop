@@ -4,13 +4,23 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
-  private let model = AppModel(isDemo: CommandLine.arguments.contains("--demo"))
+  private let model = AppDelegate.makeModel()
   private let presenter = CutinPresenter()
   private var statusBar: StatusBarController?
   private var settingsWindow: NSWindow?
   private var timers: [Timer] = []
 
   private static let refreshInterval: TimeInterval = 3 * 60
+
+  /// Real Google accounts when the build carries the OAuth client, sample accounts
+  /// otherwise. Sample accounts keep their settings apart so they never reach the
+  /// settings real accounts share through iCloud.
+  private static func makeModel() -> AppModel {
+    if let client = OAuthClient(infoDictionary: Bundle.main.infoDictionary ?? [:]) {
+      return AppModel(source: GoogleCalendarSource(client: client), store: ConfigStore(url: ConfigStore.defaultURL()))
+    }
+    return AppModel(source: SampleCalendarSource(), store: ConfigStore(url: ConfigStore.sampleURL()))
+  }
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     statusBar = StatusBarController(model: model, actions: self)
@@ -43,7 +53,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     let now = Date()
     statusBar?.updateTitle(now: now)
     presenter.theme = model.config.appearance.theme
-    let group = model.policy.cutInGroup(model.cutInCandidates, now: now, acknowledged: model.acknowledged)
+    presenter.accounts = model.config.accounts
+    let group = model.policy.cutInGroup(model.meetings, now: now, acknowledged: model.acknowledged)
     // Once shown, the cut-in stays until the user acts, even past the grace period;
     // newly gathered meetings join the ones already on screen.
     let shownIDs = Set(presenter.meetings.map(\.id))
@@ -88,8 +99,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   }
 
   /// Shows a scenario at once, for judging the cut-in's look; nothing it shows is a real meeting.
-  func tryCutin(_ scenario: DemoCalendar.Scenario) {
+  func tryCutin(_ scenario: SampleCalendar.Scenario) {
     presenter.theme = model.config.appearance.theme
+    presenter.accounts = model.config.accounts
     presenter.show(scenario.meetings(now: Date(), leadTime: model.policy.leadTime))
   }
 

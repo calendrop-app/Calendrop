@@ -1,8 +1,16 @@
 import Foundation
 
-public struct CalendarRef: Hashable, Sendable {
+public struct CalendarRef: Hashable, Sendable, Identifiable {
   public var id: String
   public var name: String
+  /// Ticked in Google Calendar's sidebar; what an account uses until the user chooses.
+  public var isSelectedInGoogle: Bool
+
+  public init(id: String, name: String, isSelectedInGoogle: Bool) {
+    self.id = id
+    self.name = name
+    self.isSelectedInGoogle = isSelectedInGoogle
+  }
 }
 
 /// Turns Google Calendar API v3 responses into `Meeting`s.
@@ -10,7 +18,7 @@ public enum GoogleCalendarParser {
   /// Event types that occupy the calendar but are not something to join.
   private static let ignoredEventTypes: Set<String> = ["outOfOffice", "focusTime", "workingLocation", "birthday"]
 
-  public static func meetings(fromEvents data: Data, account: String, calendarName: String) throws -> [Meeting] {
+  public static func meetings(fromEvents data: Data, account: String, calendar: CalendarRef) throws -> [Meeting] {
     let response = try JSONDecoder().decode(EventsResponse.self, from: data)
     return response.items.compactMap { event in
       guard event.status != "cancelled",
@@ -36,9 +44,21 @@ public enum GoogleCalendarParser {
         ),
         htmlLink: event.htmlLink.flatMap(URL.init(string:)),
         account: account,
-        calendarName: calendarName
+        calendarID: calendar.id,
+        calendarName: calendar.name,
+        location: event.location.flatMap(nonEmpty),
+        notes: event.description.map(PlainText.fromHTML).flatMap(nonEmpty),
+        organizer: event.organizer.flatMap { $0.isSelf == true ? nil : nonEmpty($0.displayName ?? $0.email ?? "") },
+        attendees: (event.attendees ?? [])
+          .filter { $0.isSelf != true && $0.resource != true && $0.responseStatus != "declined" }
+          .compactMap { nonEmpty($0.displayName ?? $0.email ?? "") }
       )
     }
+  }
+
+  private static func nonEmpty(_ text: String) -> String? {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed.isEmpty ? nil : trimmed
   }
 
   /// The continuation token of any paged Calendar API list response.
@@ -46,11 +66,12 @@ public enum GoogleCalendarParser {
     try JSONDecoder().decode(PageInfo.self, from: data).nextPageToken
   }
 
-  /// The calendars the user has ticked in Google Calendar's sidebar.
+  /// Every calendar of the account, each marked with whether Google Calendar shows it.
   public static func calendars(fromCalendarList data: Data) throws -> [CalendarRef] {
-    try JSONDecoder().decode(CalendarListResponse.self, from: data).items
-      .filter { $0.selected == true }
-      .map { CalendarRef(id: $0.id, name: $0.summaryOverride ?? $0.summary ?? $0.id) }
+    try JSONDecoder().decode(CalendarListResponse.self, from: data).items.map {
+      CalendarRef(
+        id: $0.id, name: $0.summaryOverride ?? $0.summary ?? $0.id, isSelectedInGoogle: $0.selected == true)
+    }
   }
 
   static func parseDate(_ string: String) -> Date? {
@@ -83,6 +104,7 @@ private struct EventsResponse: Decodable {
     var start: EventTime
     var end: EventTime
     var attendees: [Attendee]?
+    var organizer: Attendee?
     var conferenceData: ConferenceData?
   }
 
@@ -91,12 +113,15 @@ private struct EventsResponse: Decodable {
   }
 
   struct Attendee: Decodable {
+    var email: String?
+    var displayName: String?
     var isSelf: Bool?
+    var resource: Bool?
     var responseStatus: String?
 
     enum CodingKeys: String, CodingKey {
+      case email, displayName, resource, responseStatus
       case isSelf = "self"
-      case responseStatus
     }
   }
 

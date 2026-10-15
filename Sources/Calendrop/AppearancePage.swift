@@ -5,8 +5,8 @@ import SwiftUI
 /// full screen.
 struct AppearancePage: View {
   @ObservedObject var model: AppModel
-  let onTry: (DemoCalendar.Scenario) -> Void
-  @State private var previewScenario: DemoCalendar.Scenario = .single
+  let onTry: (SampleCalendar.Scenario) -> Void
+  @State private var previewScenario: SampleCalendar.Scenario = .single
 
   private var appearance: CutinAppearance { model.config.appearance }
 
@@ -28,13 +28,14 @@ struct AppearancePage: View {
     SettingsGroup("Preview") {
       VStack(alignment: .leading, spacing: 12) {
         Picker("", selection: $previewScenario) {
-          ForEach(DemoCalendar.Scenario.allCases, id: \.self) { Text($0.title).tag($0) }
+          ForEach(SampleCalendar.Scenario.allCases, id: \.self) { Text($0.title).tag($0) }
         }
         .pickerStyle(.segmented)
         .labelsHidden()
         CutinMiniature(
           meetings: previewScenario.meetings(now: Date(), leadTime: 90),
-          theme: appearance.theme)
+          theme: appearance.theme,
+          accounts: model.config.accounts)
       }
       .padding(.vertical, 14)
     } footer: {
@@ -158,12 +159,13 @@ private struct StyleCard: View {
 private struct CutinMiniature: View {
   let meetings: [Meeting]
   let theme: CutinTheme
+  let accounts: [AccountSettings]
   private let screen = CGSize(width: 1440, height: 900)
 
   var body: some View {
     GeometryReader { proxy in
       let scale = proxy.size.width / screen.width
-      CutinView(meetings: meetings, theme: theme, onJoin: { _ in }, onDismiss: {})
+      CutinView(meetings: meetings, theme: theme, accounts: accounts, onJoin: { _ in }, onDismiss: {})
         .frame(width: screen.width, height: screen.height)
         .scaleEffect(scale, anchor: .topLeading)
         .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)

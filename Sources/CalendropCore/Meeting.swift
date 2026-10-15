@@ -9,11 +9,20 @@ public struct Meeting: Identifiable, Hashable, Sendable {
   public var joinURL: URL?
   public var htmlLink: URL?
   public var account: String
+  public var calendarID: String
   public var calendarName: String
+  public var location: String?
+  /// The description as plain text.
+  public var notes: String?
+  /// Who invited the user; nil when it is the user's own meeting.
+  public var organizer: String?
+  /// Everyone else invited who has not declined, by name where Google has one.
+  public var attendees: [String]
 
   public init(
     uid: String, title: String, start: Date, end: Date, joinURL: URL?, htmlLink: URL?, account: String,
-    calendarName: String
+    calendarID: String = "", calendarName: String, location: String? = nil, notes: String? = nil,
+    organizer: String? = nil, attendees: [String] = []
   ) {
     self.uid = uid
     self.title = title
@@ -22,7 +31,12 @@ public struct Meeting: Identifiable, Hashable, Sendable {
     self.joinURL = joinURL
     self.htmlLink = htmlLink
     self.account = account
+    self.calendarID = calendarID
     self.calendarName = calendarName
+    self.location = location
+    self.notes = notes
+    self.organizer = organizer
+    self.attendees = attendees
   }
 
   public var id: String { acknowledgementKey }
@@ -36,7 +50,15 @@ public struct Meeting: Identifiable, Hashable, Sendable {
   /// Google links carry the event's account as `authuser`, so a browser signed in to
   /// several Google accounts opens them as the right one instead of its default.
   public var openURL: URL? {
-    guard let url = joinURL ?? htmlLink else { return nil }
+    (joinURL ?? htmlLink).map(asAccount)
+  }
+
+  /// The event's page in Google Calendar, opened as the event's account.
+  public var eventURL: URL? {
+    htmlLink.map(asAccount)
+  }
+
+  private func asAccount(_ url: URL) -> URL {
     guard Self.googleHosts.contains(url.host ?? ""),
       var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
     else { return url }
@@ -49,6 +71,14 @@ public struct Meeting: Identifiable, Hashable, Sendable {
   }
 
   private static let googleHosts: Set<String> = ["meet.google.com", "calendar.google.com", "www.google.com"]
+
+  /// "With Aki, Ken, Lee and 2 others", or nil when nobody else is invited.
+  public var attendeeSummary: String? {
+    guard !attendees.isEmpty else { return nil }
+    let shown = attendees.prefix(3).joined(separator: ", ")
+    let rest = attendees.count - 3
+    return rest > 0 ? "With \(shown) and \(rest) other\(rest == 1 ? "" : "s")" : "With \(shown)"
+  }
 
   public func overlaps(_ other: Meeting) -> Bool {
     start < other.end && other.start < end

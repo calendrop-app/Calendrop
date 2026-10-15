@@ -7,30 +7,84 @@ import Foundation
 /// listed here without a local token is shown as "sign in required", and signing in
 /// sends its address to Google as `login_hint`.
 public struct SharedConfig: Codable, Equatable, Sendable {
-  public var accounts: [String] = []
+  public var accounts: [AccountSettings] = []
   public var leadMinutes: Int = 2
   public var cutInWithoutJoinLink = false
   public var appearance = CutinAppearance()
+
+  private enum CodingKeys: String, CodingKey {
+    case accounts, leadMinutes, cutInWithoutJoinLink, appearance
+  }
 
   public init() {}
 
   public init(from decoder: Decoder) throws {
     let c = try decoder.container(keyedBy: CodingKeys.self)
     let defaults = SharedConfig()
-    accounts = try c.decodeIfPresent([String].self, forKey: .accounts) ?? defaults.accounts
+    accounts = (try? Self.decodeAccounts(from: c)) ?? defaults.accounts
     leadMinutes = try c.decodeIfPresent(Int.self, forKey: .leadMinutes) ?? defaults.leadMinutes
     cutInWithoutJoinLink =
       try c.decodeIfPresent(Bool.self, forKey: .cutInWithoutJoinLink) ?? defaults.cutInWithoutJoinLink
     appearance = (try? c.decodeIfPresent(CutinAppearance.self, forKey: .appearance)) ?? defaults.appearance
   }
 
+  /// Accepts the older list of bare addresses, and skips an entry it cannot read
+  /// rather than losing every account to one hand-edit gone wrong.
+  private static func decodeAccounts(from c: KeyedDecodingContainer<CodingKeys>) throws -> [AccountSettings] {
+    guard c.contains(.accounts) else { return [] }
+    var list = try c.nestedUnkeyedContainer(forKey: .accounts)
+    var accounts: [AccountSettings] = []
+    while !list.isAtEnd {
+      let stored: StoredAccount?
+      if let email = try? list.decode(String.self) {
+        stored = StoredAccount(email: email)
+      } else if let entry = try? list.decode(StoredAccount.self) {
+        stored = entry
+      } else {
+        _ = try? list.decode(Skipped.self)
+        stored = nil
+      }
+      guard let stored, !accounts.contains(where: { $0.email == stored.email.lowercased() }) else { continue }
+      accounts.append(
+        AccountSettings(
+          email: stored.email,
+          label: stored.label,
+          color: stored.color.flatMap(ThemeColor.init(hex:)) ?? AccountPalette.color(after: accounts.map(\.color)),
+          calendarIDs: stored.calendarIDs))
+    }
+    return accounts
+  }
+
+  private struct StoredAccount: Decodable {
+    var email: String
+    var label: String?
+    var color: String?
+    var calendarIDs: [String]?
+
+    init(email: String) { self.email = email }
+  }
+
+  private struct Skipped: Decodable {
+    init(from decoder: Decoder) throws {}
+  }
+
+  public func account(_ email: String) -> AccountSettings? {
+    accounts.first { $0.email == email.lowercased() }
+  }
+
+  /// Adds the account with the first unused colour; an account already present keeps its settings.
   public mutating func addAccount(_ email: String) {
-    let normalized = email.lowercased()
-    if !accounts.contains(normalized) { accounts.append(normalized) }
+    guard account(email) == nil else { return }
+    accounts.append(AccountSettings(email: email, color: AccountPalette.color(after: accounts.map(\.color))))
+  }
+
+  public mutating func updateAccount(_ email: String, _ change: (inout AccountSettings) -> Void) {
+    guard let index = accounts.firstIndex(where: { $0.email == email.lowercased() }) else { return }
+    change(&accounts[index])
   }
 
   public mutating func removeAccount(_ email: String) {
-    accounts.removeAll { $0 == email.lowercased() }
+    accounts.removeAll { $0.email == email.lowercased() }
   }
 }
 
@@ -49,6 +103,12 @@ public struct ConfigStore: Sendable {
       return cloudDocs.appendingPathComponent("Calendrop/config.json")
     }
     return home.appendingPathComponent("Library/Application Support/Calendrop/config.json")
+  }
+
+  /// Where a build without Google sign-in keeps its sample accounts: on this Mac
+  /// only, so they never land in the settings real accounts share through iCloud.
+  public static func sampleURL(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
+    home.appendingPathComponent("Library/Application Support/Calendrop/sample-config.json")
   }
 
   /// A missing or unreadable file yields the defaults rather than an error, so a
