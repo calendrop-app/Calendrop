@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- The logo on a pale plate, at the size of a macOS app icon: a body of 824 in 1024. -->
+  <defs>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4E8F7"/></linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#plate)"/>
+  <g transform="translate(192 192) scale(0.76923) translate(-96 -80)">
+    <defs>
+      <linearGradient id="cloth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A2662"/><stop offset="1" stop-color="#0B0A1C"/></linearGradient>
+    </defs>
+    <rect x="120" y="140" width="784" height="64" rx="32" fill="#1C1A3F"/>
+    <rect x="160" y="180" width="704" height="430" fill="url(#cloth)"/>
+    <rect x="140" y="592" width="744" height="44" rx="22" fill="#1C1A3F"/>
+    <rect x="250" y="290" width="300" height="44" rx="22" fill="#FFFFFF"/>
+    <rect x="610" y="276" width="164" height="72" rx="36" fill="#4F7DF3"/>
+    <rect x="250" y="440" width="230" height="44" rx="22" fill="#FFFFFF"/>
+    <rect x="610" y="426" width="164" height="72" rx="36" fill="#4F7DF3"/>
+    <rect x="503" y="636" width="18" height="96" fill="#1C1A3F"/>
+    <circle cx="512" cy="784" r="52" fill="none" stroke="#1C1A3F" stroke-width="30"/>
+  </g>
+</svg>

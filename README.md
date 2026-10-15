@@ -96,7 +96,7 @@ signature, it ties that answer to the build itself.
 ## Development
 
 Enter the development shell with `nix develop` (or copy `.envrc.sample` to
-`.envrc` and `direnv allow`) for `just` and `nixfmt`. Swift itself comes from
+`.envrc` and `direnv allow`) for `just`, `nixfmt` and `rsvg-convert`. Swift itself comes from
 Xcode or the Command Line Tools. Then:
 
 ```sh

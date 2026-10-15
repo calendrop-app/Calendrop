@@ -20,6 +20,7 @@
         default = pkgs.mkShellNoCC {
           packages = [
             pkgs.just
+            pkgs.librsvg
             pkgs.nixfmt
           ];
         };

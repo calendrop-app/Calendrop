@@ -28,9 +28,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
   func updateTitle(now: Date) {
     guard let button = item.button else { return }
-    let symbol = model.needsAttention ? "calendar.badge.exclamationmark" : "calendar"
-    if button.image?.accessibilityDescription != symbol {
-      button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: symbol)
+    let description = model.needsAttention ? "Calendrop, needs attention" : "Calendrop"
+    if button.image?.accessibilityDescription != description {
+      button.image = Self.icon(attention: model.needsAttention, description: description)
     }
     if let next = model.policy.nextMeeting(in: model.meetings, now: now) {
       let title = Countdown.truncate(next.title, to: Self.titleLength)
@@ -197,6 +197,32 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   private func symbol(_ name: String, colour: NSColor) -> NSImage? {
     NSImage(systemSymbolName: name, accessibilityDescription: nil)?
       .withSymbolConfiguration(.init(paletteColors: [colour]))
+  }
+
+  /// The Calendrop symbol as a template image, with a dot cut into its corner
+  /// when something needs attention.
+  private static func icon(attention: Bool, description: String) -> NSImage? {
+    // Outside the app bundle (`swift run`) there is no MenuBarIcon resource.
+    guard let base = NSImage(named: "MenuBarIcon") else {
+      let name = attention ? "calendar.badge.exclamationmark" : "calendar"
+      return NSImage(systemSymbolName: name, accessibilityDescription: description)
+    }
+    let size = NSSize(width: 16, height: 16)
+    let image = NSImage(size: size, flipped: false) { rect in
+      base.draw(in: rect)
+      if attention {
+        let dot = NSRect(x: 10.5, y: 10.5, width: 5.5, height: 5.5)
+        NSGraphicsContext.current?.compositingOperation = .clear
+        NSBezierPath(ovalIn: dot.insetBy(dx: -1.5, dy: -1.5)).fill()
+        NSGraphicsContext.current?.compositingOperation = .sourceOver
+        NSColor.black.setFill()
+        NSBezierPath(ovalIn: dot).fill()
+      }
+      return true
+    }
+    image.isTemplate = true
+    image.accessibilityDescription = description
+    return image
   }
 
   private func action(_ title: String, _ selector: Selector, key: String = "") -> NSMenuItem {

@@ -1,4 +1,4 @@
-# Run `nix develop` (or use direnv) first so just and nixfmt are on PATH. Swift
+# Run `nix develop` (or use direnv) first so just, nixfmt and rsvg-convert are on PATH. Swift
 # itself comes from Xcode or the Command Line Tools.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
@@ -43,9 +43,25 @@ ci: fmt-check lint test
 bundle:
     swift build -c release
     rm -rf {{ bundle }}
-    mkdir -p {{ bundle }}/Contents/MacOS
+    mkdir -p {{ bundle }}/Contents/MacOS {{ bundle }}/Contents/Resources
     cp "$(swift build -c release --show-bin-path)/{{ app_name }}" {{ bundle }}/Contents/MacOS/{{ app_name }}
     cp Resources/Info.plist {{ bundle }}/Contents/Info.plist
+    # The app icon Finder and the Dock show. At 32 pixels and below the plate holds
+    # the logo drawn for small sizes, which stays legible.
+    iconset="$(mktemp -d)/AppIcon.iconset"; mkdir -p "$iconset"; \
+    for size in 16 32 128 256 512; do \
+      for scale in 1 2; do \
+        pixels=$((size * scale)); art=Resources/app-icon.svg; \
+        if (( pixels <= 32 )); then art=Resources/app-icon-small.svg; fi; \
+        name="icon_${size}x${size}"; if (( scale == 2 )); then name="$name@2x"; fi; \
+        rsvg-convert -w "$pixels" -h "$pixels" -o "$iconset/$name.png" "$art"; \
+      done; \
+    done; \
+    iconutil -c icns -o {{ bundle }}/Contents/Resources/AppIcon.icns "$iconset"; \
+    rm -rf "$(dirname "$iconset")"
+    # The menu bar icon: the logo's small symbol, a template image macOS tints.
+    rsvg-convert -w 16 -h 16 -o {{ bundle }}/Contents/Resources/MenuBarIcon.png Resources/logo/calendrop-icon-small-mono-black.svg
+    rsvg-convert -w 32 -h 32 -o {{ bundle }}/Contents/Resources/MenuBarIcon@2x.png Resources/logo/calendrop-icon-small-mono-black.svg
     # The Google OAuth client comes from the environment so it never lands in the
     # repository. Without it the app offers sample accounts instead of Google sign-in.
     if [[ -n "${CALENDROP_GOOGLE_CLIENT_ID:-}" && -n "${CALENDROP_GOOGLE_CLIENT_SECRET:-}" ]]; then \

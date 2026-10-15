@@ -28,8 +28,8 @@ or deliberately dismiss it.
   the network or the Keychain — parsing, scheduling, OAuth requests, the
   shared config — lives in `CalendropCore` and is tested there. The `Calendrop` target
   only wires it to the system.
-- **Swift comes from Apple.** The Nix dev shell provides `just` and `nixfmt`
-  only; `swift` is Xcode's or the Command Line Tools'. AppKit and SwiftUI do
+- **Swift comes from Apple.** The Nix dev shell provides `just`, `nixfmt` and
+  `rsvg-convert` only; `swift` is Xcode's or the Command Line Tools'. AppKit and SwiftUI do
   not build with the Swift toolchain in nixpkgs.
 - **Dependencies are current.** Before adding or bumping one, look up its
   latest release in the registry. Do not copy a version from memory or from
@@ -46,7 +46,7 @@ Run `just ci` before reporting a change as done. CI runs the same recipe.
 | `Sources/CalendropCore/` | platform-independent logic: models, parsing, scheduling, OAuth, shared config |
 | `Sources/Calendrop/` | the AppKit/SwiftUI app: menu bar, cut-in windows, settings, Keychain, network |
 | `Tests/CalendropCoreTests/` | tests for `CalendropCore` (swift-testing) |
-| `Resources/` | the app bundle's `Info.plist` |
+| `Resources/` | the app bundle's `Info.plist`, the app icon, and in `logo/` the logo SVGs copied from [calendrop-brand](https://github.com/calendrop-app/calendrop-brand) |
 | `scripts/` | the self-signed code signing identity: making it and importing it into the keychain |
 | `docs/` | concept, ADRs, specs, references |
 
