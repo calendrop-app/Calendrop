@@ -78,8 +78,20 @@ On another Mac the accounts appear as "Sign-in required". Signing in opens the
 browser with the account already chosen (`login_hint`), so tokens never travel
 between machines.
 
-Because the app is ad-hoc signed, macOS asks for Keychain access again after
-each rebuild; choose **Always Allow**.
+Builds are signed with a self-signed identity, "Calendrop Release", when the login
+keychain has it, so every build has the same signing requirement. Make it once with
+`just release-identity <folder>`, keep the two values it prints, and import them
+on each Mac:
+
+```sh
+CALENDROP_SIGNING_P12=… CALENDROP_SIGNING_PASSWORD=… just import-identity
+```
+
+Without it, builds are signed ad-hoc.
+
+Either way, macOS asks for Keychain access once more after each rebuild or
+update, even when it was always allowed: without an Apple team ID in the
+signature, it ties that answer to the build itself.
 
 ## Development
 

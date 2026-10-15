@@ -39,7 +39,7 @@ test:
 # Everything CI runs.
 ci: fmt-check lint test
 
-# Assemble build/Calendrop.app (release build, ad-hoc signed).
+# Assemble build/Calendrop.app (release build, signed; see import-identity).
 bundle:
     swift build -c release
     rm -rf {{ bundle }}
@@ -54,11 +54,26 @@ bundle:
     else \
       echo "warning: CALENDROP_GOOGLE_CLIENT_ID / CALENDROP_GOOGLE_CLIENT_SECRET not set; this build offers sample accounts instead of Google sign-in" >&2; \
     fi
-    codesign --force --sign - {{ bundle }}
+    # Signed by the "Calendrop Release" identity when the keychain has it, so every
+    # build has the same signing requirement (just import-identity).
+    if security find-certificate -c "Calendrop Release" >/dev/null 2>&1; then \
+      codesign --force --sign "Calendrop Release" {{ bundle }}; \
+    else \
+      echo "warning: no \"Calendrop Release\" in the keychain; signing ad-hoc (see just import-identity)" >&2; \
+      codesign --force --sign - {{ bundle }}; \
+    fi
 
 # Build the bundle and launch it.
 run: bundle
     open {{ bundle }}
+
+# Make the self-signed identity every build is signed with, into a new folder.
+release-identity folder:
+    scripts/release-identity.sh {{ folder }}
+
+# Import that identity, given as CALENDROP_SIGNING_P12 and CALENDROP_SIGNING_PASSWORD, into the login keychain.
+import-identity:
+    scripts/import-identity.sh
 
 # Copy the bundle into /Applications.
 install: bundle

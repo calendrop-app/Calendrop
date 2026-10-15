@@ -47,6 +47,7 @@ Run `just ci` before reporting a change as done. CI runs the same recipe.
 | `Sources/Calendrop/` | the AppKit/SwiftUI app: menu bar, cut-in windows, settings, Keychain, network |
 | `Tests/CalendropCoreTests/` | tests for `CalendropCore` (swift-testing) |
 | `Resources/` | the app bundle's `Info.plist` |
+| `scripts/` | the self-signed code signing identity: making it and importing it into the keychain |
 | `docs/` | concept, ADRs, specs, references |
 
 ## Language
@@ -77,7 +78,7 @@ Scoped Commits:
 | --- | --- |
 | `core` | `Sources/CalendropCore/`, `Tests/CalendropCoreTests/` |
 | `app` | `Sources/Calendrop/`, `Resources/` |
-| `build` | `Package.swift`, `justfile`, `.swift-format` |
+| `build` | `Package.swift`, `justfile`, `.swift-format`, `scripts/` |
 | `docs` | `README.md`, `docs/concept.md` |
 | `adr` | `docs/adr/` |
 | `spec` | `docs/spec/` |
