@@ -40,6 +40,10 @@ so a conflict is visible at once instead of as a series of interruptions.
 Each meeting on the cut-in shows its time, its account and calendar, where it
 is, who else is invited and the start of its description.
 
+When it appears, the cut-in falls in from the top of the screen, unless the
+user turned that off; with Reduce Motion on it fades in instead. Rebuilding it
+for a display change does not replay the entrance.
+
 The user picks one of the preset styles or a custom one with their own
 background, text and button colours and font. Settings preview the style live
 and can show it full screen with sample meetings, which never count as real

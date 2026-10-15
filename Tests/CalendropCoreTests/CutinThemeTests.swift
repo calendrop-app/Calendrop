@@ -74,6 +74,16 @@ import Testing
     #expect(appearance.theme.accent == ThemeColor(hex: "#00FF00"))
   }
 
+  @Test func dropsInUnlessTurnedOff() throws {
+    #expect(CutinAppearance().dropsIn)
+    var appearance = CutinAppearance()
+    appearance.dropsIn = false
+    let decoded = try JSONDecoder().decode(CutinAppearance.self, from: JSONEncoder().encode(appearance))
+    #expect(!decoded.dropsIn)
+    let legacy = try JSONDecoder().decode(CutinAppearance.self, from: Data(#"{"style":"ocean"}"#.utf8))
+    #expect(legacy.dropsIn)
+  }
+
   @Test func roundTripsThroughJSON() throws {
     var appearance = CutinAppearance()
     appearance.customize()

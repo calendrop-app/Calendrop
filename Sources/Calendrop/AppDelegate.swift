@@ -55,6 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     let now = Date()
     statusBar?.updateTitle(now: now)
     presenter.theme = model.config.appearance.theme
+    presenter.dropsIn = model.config.appearance.dropsIn
     presenter.accounts = model.config.accounts
     // A trial shows sample meetings only; real ones wait until it is closed.
     guard !showingTrial else {
@@ -118,6 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   func tryCutin(_ scenario: SampleCalendar.Scenario) {
     showingTrial = true
     presenter.theme = model.config.appearance.theme
+    presenter.dropsIn = model.config.appearance.dropsIn
     presenter.accounts = model.config.accounts
     presenter.show(scenario.meetings(now: Date(), leadTime: model.policy.leadTime))
   }

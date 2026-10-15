@@ -146,6 +146,8 @@ public struct CutinAppearance: Codable, Equatable, Sendable {
   public var style: Style = .preset(CutinPreset.allCases[0])
   /// Kept while a preset is selected, so switching back to custom restores it.
   public var custom: CutinTheme = CutinPreset.allCases[0].theme
+  /// Whether the cut-in falls in from the top when it appears, or simply appears.
+  public var dropsIn = true
 
   public init() {}
 
@@ -164,7 +166,7 @@ public struct CutinAppearance: Codable, Equatable, Sendable {
   }
 
   private enum CodingKeys: String, CodingKey {
-    case style, custom
+    case style, custom, dropsIn
   }
 
   private static let customKey = "custom"
@@ -178,6 +180,7 @@ public struct CutinAppearance: Codable, Equatable, Sendable {
       style = .preset(preset)
     }
     custom = (try? c.decodeIfPresent(CutinTheme.self, forKey: .custom)) ?? custom
+    dropsIn = (try? c.decodeIfPresent(Bool.self, forKey: .dropsIn)) ?? dropsIn
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -187,5 +190,6 @@ public struct CutinAppearance: Codable, Equatable, Sendable {
     case .custom: try c.encode(Self.customKey, forKey: .style)
     }
     try c.encode(custom, forKey: .custom)
+    try c.encode(dropsIn, forKey: .dropsIn)
   }
 }

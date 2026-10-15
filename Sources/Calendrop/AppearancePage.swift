@@ -47,6 +47,22 @@ struct AppearancePage: View {
       .help("Shows the cut-in on every screen. Join or hold the corner control to close it.")
     }
 
+    SettingsGroup("Motion") {
+      SettingsRow(
+        "Drop in from the top",
+        description:
+          "When off, the cut-in appears at once. With Reduce Motion on in System Settings, it fades in instead."
+      ) {
+        Toggle(
+          "",
+          isOn: Binding(
+            get: { appearance.dropsIn }, set: { on in model.updateConfig { $0.appearance.dropsIn = on } })
+        )
+        .toggleStyle(.switch)
+        .labelsHidden()
+      }
+    }
+
     if appearance.style == .custom {
       CustomThemeGroup(model: model)
     } else {

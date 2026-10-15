@@ -19,6 +19,8 @@ final class CutinPresenter {
   var accounts: [AccountSettings] = [] {
     didSet { if accounts != oldValue, isShowing { rebuild() } }
   }
+  /// Whether a cut-in that was not on screen falls in from the top.
+  var dropsIn = true
   private var windows: [NSWindow] = []
   private var observers: [NSObjectProtocol] = []
 
@@ -41,8 +43,9 @@ final class CutinPresenter {
 
   func show(_ meetings: [Meeting]) {
     let changed = meetings.map(\.id) != self.meetings.map(\.id)
+    let arriving = windows.isEmpty
     self.meetings = meetings
-    if changed || windows.isEmpty { rebuild() }
+    if changed || arriving { rebuild(dropsIn: arriving && dropsIn) }
   }
 
   func hide() {
@@ -63,9 +66,11 @@ final class CutinPresenter {
     }
   }
 
-  private func rebuild() {
+  /// Only a cut-in that was not on screen drops in; rebuilding one already showing,
+  /// for a display or style change, must not replay the entrance.
+  private func rebuild(dropsIn: Bool = false) {
     for window in windows { window.orderOut(nil) }
-    windows = NSScreen.screens.map(makeWindow(for:))
+    windows = NSScreen.screens.map { makeWindow(for: $0, dropsIn: dropsIn) }
     bringToFront()
   }
 
@@ -77,7 +82,7 @@ final class CutinPresenter {
     if let key, !key.isKeyWindow { key.makeKey() }
   }
 
-  private func makeWindow(for screen: NSScreen) -> NSWindow {
+  private func makeWindow(for screen: NSScreen, dropsIn: Bool) -> NSWindow {
     let window = CutinWindow(contentRect: screen.frame, styleMask: [.borderless], backing: .buffered, defer: false)
     window.isReleasedWhenClosed = false
     // Above full-screen apps, the Dock and the menu bar.
@@ -92,6 +97,7 @@ final class CutinPresenter {
         meetings: meetings,
         theme: theme,
         accounts: accounts,
+        dropsIn: dropsIn,
         onJoin: { [weak self] in self?.onJoin?($0) },
         onDismiss: { [weak self] in self?.onDismiss?() }
       ))

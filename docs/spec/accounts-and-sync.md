@@ -55,6 +55,7 @@ that cannot be read is skipped without affecting the others.
 | --- | --- | --- |
 | `style` | string | `midnight`, `daylight`, `sunset`, `ocean`, `monochrome`, or `custom` |
 | `custom` | object | The custom style, kept while a preset is selected |
+| `dropsIn` | boolean | Whether the cut-in falls in from the top; `true` when missing |
 
 `custom` holds `backgroundTop`, `backgroundBottom`, `text` and `accent` as
 `#RRGGBB` colours, `backgroundOpacity` as a number from `0.6` to `1`, and

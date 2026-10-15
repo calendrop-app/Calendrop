@@ -5,11 +5,18 @@ struct CutinView: View {
   let meetings: [Meeting]
   let theme: CutinTheme
   var accounts: [AccountSettings] = []
+  /// Falls in from the top when it first appears, rather than replacing the screen in one frame.
+  var dropsIn = false
   let onJoin: (Meeting) -> Void
   let onDismiss: () -> Void
 
+  @State private var arrived = false
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
   var body: some View {
     let palette = CutinPalette(theme)
+    let settled = arrived || !dropsIn
+    let raised = !settled && !reduceMotion
     ZStack(alignment: .topTrailing) {
       LinearGradient(
         colors: [Color(theme.backgroundTop), Color(theme.backgroundBottom)],
@@ -36,6 +43,16 @@ struct CutinView: View {
     .environment(\.colorScheme, theme.backgroundTop.isLight ? .light : .dark)
     .environment(\.cutinPalette, palette)
     .environment(\.cutinAccounts, accounts)
+    .visualEffect { content, proxy in
+      content.offset(y: raised ? -proxy.size.height : 0)
+    }
+    .opacity(settled || !reduceMotion ? 1 : 0)
+    .onAppear {
+      guard dropsIn else { return }
+      withAnimation(reduceMotion ? .easeOut(duration: 0.25) : .spring(duration: 0.6, bounce: 0.25)) {
+        arrived = true
+      }
+    }
   }
 }
 
