@@ -17,7 +17,10 @@ struct CutinView: View {
     let palette = CutinPalette(theme)
     let settled = arrived || !dropsIn
     let raised = !settled && !reduceMotion
-    ZStack(alignment: .topTrailing) {
+    // The dismiss control sits bottom-left: a window is placed from that corner, so it
+    // stays on screen even if a resolution change went unnoticed and the window
+    // outgrew the screen, which would push the top and right edges off it.
+    ZStack(alignment: .bottomLeading) {
       LinearGradient(
         colors: [Color(theme.backgroundTop), Color(theme.backgroundBottom)],
         startPoint: .top, endPoint: .bottom

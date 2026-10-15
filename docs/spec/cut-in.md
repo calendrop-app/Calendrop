@@ -61,7 +61,8 @@ Only by the user:
   without a link offers **OK** instead, which only closes the cut-in. With a
   single meeting, Return triggers either.
 - **Dismiss** is a small control that must be pressed and held. It settles
-  every meeting on the cut-in.
+  every meeting on the cut-in. It sits in the corner that stays on screen even
+  if a change of resolution went unnoticed, so the cut-in can always be closed.
 
 Escape and closing shortcuts do nothing. A cut-in that has appeared stays even
 after the meeting is well under way.

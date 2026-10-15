@@ -19,7 +19,7 @@ or deliberately dismiss it.
   every display. Plugging or unplugging a display or changing the resolution
   rebuilds it to fit the new screens.
 - It stays until you press **Join Meeting** (or Return) or press and hold the
-  small dismiss control in the corner. Escape and ⌘W do nothing.
+  small dismiss control in the bottom-left corner. Escape and ⌘W do nothing.
 
 ## Install
 
