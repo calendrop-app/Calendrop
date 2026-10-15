@@ -7,10 +7,37 @@ public struct CutinPolicy: Sendable {
   /// How long after the start a still-unacknowledged meeting keeps cutting in, so a
   /// Mac that wakes from sleep just after the start still interrupts.
   public var grace: TimeInterval
+  /// Meetings starting within this distance of a due meeting share its cut-in, so
+  /// the user sees the conflict at once instead of one interruption after another.
+  public var nearby: TimeInterval
 
-  public init(leadTime: TimeInterval, grace: TimeInterval = 5 * 60) {
+  public init(leadTime: TimeInterval, grace: TimeInterval = 5 * 60, nearby: TimeInterval = 15 * 60) {
     self.leadTime = leadTime
     self.grace = grace
+    self.nearby = nearby
+  }
+
+  /// Everything one cut-in shows: every due meeting, plus every meeting that starts
+  /// near the earliest one or overlaps it, leaving out stale and acknowledged ones.
+  public func cutInGroup(_ meetings: [Meeting], now: Date, acknowledged: Set<String>) -> [Meeting] {
+    let due = meetingsToCutIn(meetings, now: now, acknowledged: acknowledged)
+    guard let anchor = due.first else { return [] }
+    let dueKeys = Set(due.map(\.acknowledgementKey))
+    return
+      meetings
+      .filter { m in
+        guard !acknowledged.contains(m.acknowledgementKey), m.end > now, m.start.addingTimeInterval(grace) > now
+        else { return false }
+        return dueKeys.contains(m.acknowledgementKey) || abs(m.start.timeIntervalSince(anchor.start)) <= nearby
+          || m.overlaps(anchor)
+      }
+      .sorted { $0.start < $1.start }
+  }
+
+  /// The meetings joining `joined` settles: itself and those it overlaps, which the
+  /// user has chosen not to attend. Later meetings stay to cut in at their own time.
+  public func settledByJoining(_ joined: Meeting, among shown: [Meeting]) -> [Meeting] {
+    shown.filter { $0.acknowledgementKey == joined.acknowledgementKey || $0.overlaps(joined) }
   }
 
   public func meetingsToCutIn(_ meetings: [Meeting], now: Date, acknowledged: Set<String>) -> [Meeting] {

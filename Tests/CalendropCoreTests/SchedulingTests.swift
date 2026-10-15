@@ -80,6 +80,68 @@ private func meeting(
   }
 }
 
+@Suite struct CutinGroupTests {
+  let policy = CutinPolicy(leadTime: 2 * 60, grace: 5 * 60, nearby: 15 * 60)
+
+  private func group(_ meetings: [Meeting], acknowledged: Set<String> = []) -> [String] {
+    policy.cutInGroup(meetings, now: t0, acknowledged: acknowledged).map(\.uid)
+  }
+
+  @Test func isEmptyUntilSomeMeetingIsDue() {
+    #expect(group([meeting("a", startsIn: 3), meeting("b", startsIn: 3)]).isEmpty)
+  }
+
+  @Test func gathersMeetingsStartingTogether() {
+    #expect(group([meeting("a", startsIn: 1, account: "x"), meeting("b", startsIn: 1, account: "y")]) == ["a", "b"])
+  }
+
+  @Test func gathersMeetingsStartingCloseToTheDueOne() {
+    let meetings = [
+      meeting("due", startsIn: 1, lasting: 5), meeting("soon", startsIn: 16), meeting("far", startsIn: 17),
+    ]
+    #expect(group(meetings) == ["due", "soon"])
+  }
+
+  @Test func neverHoldsBackADueMeetingThatIsFarFromTheFirst() {
+    let longLead = CutinPolicy(leadTime: 30 * 60, grace: 5 * 60, nearby: 15 * 60)
+    let meetings = [meeting("first", startsIn: 10, lasting: 5), meeting("later", startsIn: 30, lasting: 5)]
+    let shown = longLead.cutInGroup(meetings, now: t0, acknowledged: []).map(\.uid)
+    #expect(shown == ["first", "later"])
+  }
+
+  @Test func gathersMeetingsOverlappingTheDueOne() {
+    let meetings = [meeting("due", startsIn: 1, lasting: 60), meeting("inside", startsIn: 40)]
+    #expect(group(meetings) == ["due", "inside"])
+  }
+
+  @Test func leavesOutStaleAndAcknowledgedMeetings() {
+    let ongoing = meeting("ongoing", startsIn: -20, lasting: 60)
+    let skipped = meeting("skipped", startsIn: 2)
+    let meetings = [ongoing, meeting("due", startsIn: 1), skipped]
+    #expect(group(meetings, acknowledged: [skipped.acknowledgementKey]) == ["due"])
+  }
+
+  @Test func joiningSettlesTheMeetingsThatOverlapIt() {
+    let a = meeting("a", startsIn: 1, lasting: 30)
+    let b = meeting("b", startsIn: 1, lasting: 60)
+    let later = meeting("later", startsIn: 31, lasting: 30)
+    let settled = policy.settledByJoining(a, among: [a, b, later]).map(\.uid)
+    #expect(settled == ["a", "b"])
+  }
+
+  @Test func joiningLeavesALaterMeetingToCutInAgain() {
+    let a = meeting("a", startsIn: 1, lasting: 4)
+    let b = meeting("b", startsIn: 6, lasting: 30)
+    let settled = policy.settledByJoining(a, among: [a, b])
+    #expect(settled.map(\.uid) == ["a"])
+    let afterJoin = t0.addingTimeInterval(4 * 60)
+    #expect(
+      policy.cutInGroup([a, b], now: afterJoin, acknowledged: Set(settled.map(\.acknowledgementKey))).map(\.uid) == [
+        "b"
+      ])
+  }
+}
+
 @Suite struct MeetingMergeTests {
   @Test func mergesDuplicatesAcrossAccountsAndSorts() {
     let shared1 = meeting("shared", startsIn: 10, account: "a@example.com")

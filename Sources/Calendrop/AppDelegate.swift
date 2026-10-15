@@ -42,11 +42,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   private func tick() {
     let now = Date()
     statusBar?.updateTitle(now: now)
-    let due = model.policy.meetingsToCutIn(model.meetings, now: now, acknowledged: model.acknowledged)
+    let group = model.policy.cutInGroup(model.meetings, now: now, acknowledged: model.acknowledged)
     // Once shown, the cut-in stays until the user acts, even past the grace period;
-    // newly due meetings join the ones already on screen.
+    // newly gathered meetings join the ones already on screen.
     let shownIDs = Set(presenter.meetings.map(\.id))
-    let added = due.filter { !shownIDs.contains($0.id) }
+    let added = group.filter { !shownIDs.contains($0.id) }
     if !added.isEmpty {
       presenter.show((presenter.meetings + added).sorted { $0.start < $1.start })
     }
@@ -61,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   // MARK: StatusBarActions
 
   func join(_ meeting: Meeting) {
-    model.acknowledge(presenter.meetings + [meeting])
+    model.acknowledge(model.policy.settledByJoining(meeting, among: presenter.meetings + [meeting]))
     presenter.hide()
     if let url = meeting.openURL {
       NSWorkspace.shared.open(url)

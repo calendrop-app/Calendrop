@@ -34,6 +34,10 @@ public struct Meeting: Identifiable, Hashable, Sendable {
   /// The URL a "join" action opens: the conference link, or the event page when there is none.
   public var openURL: URL? { joinURL ?? htmlLink }
 
+  public func overlaps(_ other: Meeting) -> Bool {
+    start < other.end && other.start < end
+  }
+
   /// Combines the meetings of several accounts into one start-ordered list.
   ///
   /// An event the user was invited to from more than one account appears once. The
