@@ -127,6 +127,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     }
     item.state = ongoing ? .mixed : .off
     item.submenu = detailMenu(for: meeting, accountName: account?.displayName ?? meeting.account, colour: colour)
+    // Clicking the meeting itself does what its submenu offers first.
+    item.target = self
+    item.representedObject = meeting
+    item.action = meeting.joinURL != nil ? #selector(join(_:)) : #selector(openEvent(_:))
     return item
   }
 
