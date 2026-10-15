@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
-  private let model = AppModel()
+  private let model = AppModel(isDemo: CommandLine.arguments.contains("--demo"))
   private let presenter = CutinPresenter()
   private var statusBar: StatusBarController?
   private var settingsWindow: NSWindow?
@@ -73,6 +73,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
       await model.refresh()
       tick()
     }
+  }
+
+  func restartDemo() {
+    presenter.hide()
+    model.restartDemo()
+    tick()
   }
 
   /// Shows a copy of the next meeting under a throwaway UID, so ending the preview

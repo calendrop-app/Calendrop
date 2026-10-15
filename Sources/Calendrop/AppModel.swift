@@ -16,23 +16,36 @@ final class AppModel: ObservableObject {
   @Published var lastError: String?
 
   let store: ConfigStore
+  /// Demo mode runs on `DemoCalendar` and never reads or writes Google, the shared
+  /// config file, the Keychain or the persisted acknowledgements.
+  let isDemo: Bool
   private let service = GoogleCalendarService()
   private var isRefreshing = false
+  private var demoAcknowledged: Set<String> = []
   private static let acknowledgedKey = "acknowledgedMeetings"
 
-  init(store: ConfigStore = ConfigStore(url: ConfigStore.defaultURL())) {
+  init(isDemo: Bool = false, store: ConfigStore = ConfigStore(url: ConfigStore.defaultURL())) {
+    self.isDemo = isDemo
     self.store = store
-    self.config = store.load()
+    if isDemo {
+      var demo = SharedConfig()
+      demo.accounts = DemoCalendar.accounts
+      self.config = demo
+    } else {
+      self.config = store.load()
+    }
   }
 
   var policy: CutinPolicy { CutinPolicy(leadTime: TimeInterval(max(0, config.leadMinutes) * 60)) }
 
   var needsAttention: Bool {
-    config.oauthClient == nil || config.accounts.isEmpty || accountStates.values.contains { $0 != .ok }
+    if isDemo { return false }
+    return config.oauthClient == nil || config.accounts.isEmpty || accountStates.values.contains { $0 != .ok }
   }
 
   func state(of account: String) -> AccountState {
-    accountStates[account] ?? (Keychain.refreshToken(for: account) == nil ? .needsSignIn : .ok)
+    if isDemo { return .ok }
+    return accountStates[account] ?? (Keychain.refreshToken(for: account) == nil ? .needsSignIn : .ok)
   }
 
   // MARK: Shared config
@@ -42,6 +55,7 @@ final class AppModel: ObservableObject {
     mutate(&next)
     guard next != config else { return }
     config = next
+    if isDemo { return }
     do {
       try store.save(next)
     } catch {
@@ -58,6 +72,10 @@ final class AppModel: ObservableObject {
   // MARK: Accounts
 
   func signIn(hint: String?) async {
+    if isDemo {
+      lastError = "Sign-in is disabled in demo mode."
+      return
+    }
     guard let client = config.oauthClient else {
       lastError = "Set the Google OAuth client ID first."
       return
@@ -79,8 +97,10 @@ final class AppModel: ObservableObject {
 
   /// Removes the account from every Mac (through the shared config) and drops this Mac's token.
   func remove(account: String) {
-    Keychain.deleteRefreshToken(for: account)
-    service.forget(account: account)
+    if !isDemo {
+      Keychain.deleteRefreshToken(for: account)
+      service.forget(account: account)
+    }
     accountStates[account] = nil
     updateConfig { $0.removeAccount(account) }
     meetings.removeAll { $0.account == account }
@@ -89,6 +109,11 @@ final class AppModel: ObservableObject {
   // MARK: Meetings
 
   func refresh() async {
+    if isDemo {
+      // The periodic refresh must not shift the schedule the user is watching.
+      if meetings.isEmpty { restartDemo() }
+      return
+    }
     guard !isRefreshing else { return }
     isRefreshing = true
     defer { isRefreshing = false }
@@ -122,15 +147,27 @@ final class AppModel: ObservableObject {
     accountStates = states.filter { current.contains($0.key) }
   }
 
+  /// Lays the sample schedule out again from now, so the cut-ins can be watched again.
+  func restartDemo() {
+    guard isDemo else { return }
+    demoAcknowledged = []
+    meetings = DemoCalendar.meetings(now: Date(), leadTime: policy.leadTime)
+  }
+
   // MARK: Acknowledgements
 
   /// Meeting occurrences the user has joined or dismissed, persisted so a relaunch
   /// does not interrupt again.
   var acknowledged: Set<String> {
-    Set((UserDefaults.standard.dictionary(forKey: Self.acknowledgedKey) ?? [:]).keys)
+    if isDemo { return demoAcknowledged }
+    return Set((UserDefaults.standard.dictionary(forKey: Self.acknowledgedKey) ?? [:]).keys)
   }
 
   func acknowledge(_ meetings: [Meeting]) {
+    if isDemo {
+      demoAcknowledged.formUnion(meetings.map(\.acknowledgementKey))
+      return
+    }
     var stored = UserDefaults.standard.dictionary(forKey: Self.acknowledgedKey) as? [String: Double] ?? [:]
     for m in meetings { stored[m.acknowledgementKey] = m.start.timeIntervalSince1970 }
     let cutoff = Date().addingTimeInterval(-2 * 24 * 3600).timeIntervalSince1970

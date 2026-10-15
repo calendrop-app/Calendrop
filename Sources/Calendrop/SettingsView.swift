@@ -6,6 +6,14 @@ struct SettingsView: View {
 
   var body: some View {
     Form {
+      if model.isDemo {
+        Section {
+          Label(
+            "Demo mode: showing sample meetings. Changes here are not saved, and Google is never contacted.",
+            systemImage: "theatermasks")
+        }
+      }
+
       Section {
         TextField("Client ID", text: binding(\.clientID))
         SecureField("Client secret", text: binding(\.clientSecret))

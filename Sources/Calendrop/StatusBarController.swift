@@ -5,6 +5,7 @@ import CalendropCore
 protocol StatusBarActions: AnyObject {
   func join(_ meeting: Meeting)
   func refreshNow()
+  func restartDemo()
   func previewCutin()
   func openSettings()
   func signIn(hint: String?)
@@ -48,7 +49,14 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     menu.removeAllItems()
     let now = Date()
 
-    if model.config.oauthClient == nil {
+    if model.isDemo {
+      let banner = NSMenuItem(title: "Demo Mode — sample meetings only", action: nil, keyEquivalent: "")
+      banner.image = NSImage(systemSymbolName: "theatermasks", accessibilityDescription: nil)
+      banner.isEnabled = false
+      menu.addItem(banner)
+      menu.addItem(action("Restart Demo Schedule", #selector(restartDemo)))
+      menu.addItem(.separator())
+    } else if model.config.oauthClient == nil {
       menu.addItem(action("Set Up Google OAuth Client…", #selector(openSettings)))
       menu.addItem(.separator())
     } else if model.config.accounts.isEmpty {
@@ -81,7 +89,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     addMeetings(to: menu, now: now)
 
     menu.addItem(.separator())
-    menu.addItem(action("Refresh Now", #selector(refreshNow), key: "r"))
+    if !model.isDemo {
+      menu.addItem(action("Refresh Now", #selector(refreshNow), key: "r"))
+    }
     menu.addItem(action("Preview Cut-in", #selector(previewCutin)))
     menu.addItem(action("Settings…", #selector(openSettings), key: ","))
     menu.addItem(.separator())
@@ -147,6 +157,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
   @objc private func addAccount() { actions?.signIn(hint: nil) }
   @objc private func refreshNow() { actions?.refreshNow() }
+  @objc private func restartDemo() { actions?.restartDemo() }
   @objc private func previewCutin() { actions?.previewCutin() }
   @objc private func openSettings() { actions?.openSettings() }
 }

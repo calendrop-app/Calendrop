@@ -52,6 +52,10 @@ bundle:
 run: bundle
     open {{ bundle }}
 
+# Build the bundle and launch it on sample meetings, without Google.
+demo: bundle
+    open -n {{ bundle }} --args --demo
+
 # Copy the bundle into /Applications.
 install: bundle
     rm -rf /Applications/{{ app_name }}.app

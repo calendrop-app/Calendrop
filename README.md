@@ -23,6 +23,17 @@ Requires macOS 14+ and Swift 6 from Xcode or the Command Line Tools.
 just install   # build Calendrop.app and copy it into /Applications
 ```
 
+## Try it without Google
+
+```sh
+just demo
+```
+
+launches Calendrop with `--demo`: it runs on sample meetings, and the first cut-in
+appears about 20 seconds later. Nothing is read from or written to Google, the
+shared configuration or the Keychain. Choose **Restart Demo Schedule** in the
+menu to watch the cut-ins again.
+
 ## Set up Google access
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), create a
