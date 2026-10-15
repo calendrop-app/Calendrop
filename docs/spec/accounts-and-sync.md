@@ -30,6 +30,19 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 | `clientSecret` | string | `""` | That client's secret |
 | `accounts` | array of strings | `[]` | Email addresses of the accounts to read, in lower case |
 | `leadMinutes` | integer | `2` | Minutes before the start that the cut-in appears |
+| `appearance` | object | the Midnight preset | How the cut-in looks; see below |
+
+`appearance` holds:
+
+| Key | Type | Meaning |
+| --- | --- | --- |
+| `style` | string | `midnight`, `daylight`, `sunset`, `ocean`, `monochrome`, or `custom` |
+| `custom` | object | The custom style, kept while a preset is selected |
+
+`custom` holds `backgroundTop`, `backgroundBottom`, `text` and `accent` as
+`#RRGGBB` colours, `backgroundOpacity` as a number from `0.6` to `1`, and
+`fontDesign` as `standard`, `rounded`, `serif` or `monospaced`. A missing or
+unrecognised value falls back to the Midnight preset's.
 
 The file never holds a token. A listed account that has not been signed in on
 the current Mac is shown as needing sign-in, and signing in preselects it.

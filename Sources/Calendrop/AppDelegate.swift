@@ -42,6 +42,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   private func tick() {
     let now = Date()
     statusBar?.updateTitle(now: now)
+    presenter.theme = model.config.appearance.theme
     let group = model.policy.cutInGroup(model.cutInCandidates, now: now, acknowledged: model.acknowledged)
     // Once shown, the cut-in stays until the user acts, even past the grace period;
     // newly gathered meetings join the ones already on screen.
@@ -75,6 +76,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     }
   }
 
+  /// Shows a scenario at once, for judging the cut-in's look; nothing it shows is a real meeting.
+  func tryCutin(_ scenario: DemoCalendar.Scenario) {
+    presenter.theme = model.config.appearance.theme
+    presenter.show(scenario.meetings(now: Date(), leadTime: model.policy.leadTime))
+  }
+
   func tryDemo(_ scenario: DemoCalendar.Scenario) {
     presenter.hide()
     model.tryDemo(scenario)
@@ -102,7 +109,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
 
   func openSettings() {
     if settingsWindow == nil {
-      let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(model: model)))
+      let window = NSWindow(
+        contentViewController: NSHostingController(
+          rootView: SettingsView(model: model, onTry: { [weak self] in self?.tryCutin($0) })))
       window.title = "Calendrop Settings"
       window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
       window.setContentSize(NSSize(width: 820, height: 560))

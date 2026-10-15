@@ -8,6 +8,8 @@ import SwiftUI
 /// once; there is no Save button.
 struct SettingsView: View {
   @ObservedObject var model: AppModel
+  /// Shows the cut-in full screen with sample meetings.
+  let onTry: (DemoCalendar.Scenario) -> Void
   @State private var page: SettingsPage = .general
 
   var body: some View {
@@ -29,6 +31,7 @@ struct SettingsView: View {
       SettingsPageView(title: page.title) {
         switch page {
         case .general: GeneralPage(model: model)
+        case .appearance: AppearancePage(model: model, onTry: onTry)
         case .accounts: AccountsPage(model: model)
         case .sync: SyncPage(model: model)
         case .about: AboutPage()
@@ -39,15 +42,16 @@ struct SettingsView: View {
 }
 
 enum SettingsPage: String, Identifiable, Hashable {
-  case general, accounts, sync, about
+  case general, appearance, accounts, sync, about
 
-  static let mainPages: [SettingsPage] = [.general, .accounts, .sync]
+  static let mainPages: [SettingsPage] = [.general, .appearance, .accounts, .sync]
 
   var id: String { rawValue }
 
   var title: String {
     switch self {
     case .general: "General"
+    case .appearance: "Appearance"
     case .accounts: "Accounts"
     case .sync: "Sync"
     case .about: "About Calendrop"
@@ -57,6 +61,7 @@ enum SettingsPage: String, Identifiable, Hashable {
   var symbol: String {
     switch self {
     case .general: "gearshape"
+    case .appearance: "paintpalette"
     case .accounts: "person.2"
     case .sync: "icloud"
     case .about: "info.circle"
@@ -269,7 +274,7 @@ private struct SettingsPageView<Content: View>: View {
   }
 }
 
-private struct SettingsGroup<Content: View, Footer: View>: View {
+struct SettingsGroup<Content: View, Footer: View>: View {
   let title: String
   let note: String?
   @ViewBuilder let content: Content
@@ -308,12 +313,12 @@ private struct SettingsGroup<Content: View, Footer: View>: View {
   }
 }
 
-private struct ResetLink {
+struct ResetLink {
   let label: String
   let action: () -> Void
 }
 
-private struct SettingsRow<Control: View>: View {
+struct SettingsRow<Control: View>: View {
   let label: String
   let description: String?
   let descriptionColor: Color
@@ -364,7 +369,7 @@ private struct SettingsRow<Control: View>: View {
   }
 }
 
-private struct SettingsWarning: View {
+struct SettingsWarning: View {
   let message: String
   var symbol = "exclamationmark.triangle"
 

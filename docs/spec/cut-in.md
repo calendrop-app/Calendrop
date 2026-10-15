@@ -33,6 +33,13 @@ so a conflict is visible at once instead of as a series of interruptions.
 - When displays are connected, disconnected or change resolution, the cut-in
   is rebuilt to cover exactly the screens that exist now.
 
+## How it looks
+
+The user picks one of the preset styles or a custom one with their own
+background, text and button colours and font. Settings preview the style live
+and can show it full screen with sample meetings, which never count as real
+meetings.
+
 ## How it ends
 
 Only by the user:

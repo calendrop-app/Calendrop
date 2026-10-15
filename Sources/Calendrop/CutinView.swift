@@ -3,16 +3,18 @@ import SwiftUI
 
 struct CutinView: View {
   let meetings: [Meeting]
+  let theme: CutinTheme
   let onJoin: (Meeting) -> Void
   let onDismiss: () -> Void
 
   var body: some View {
+    let palette = CutinPalette(theme)
     ZStack(alignment: .topTrailing) {
       LinearGradient(
-        colors: [Color(red: 0.10, green: 0.09, blue: 0.22), Color(red: 0.02, green: 0.02, blue: 0.05)],
+        colors: [Color(theme.backgroundTop), Color(theme.backgroundBottom)],
         startPoint: .top, endPoint: .bottom
       )
-      .opacity(0.96)
+      .opacity(theme.backgroundOpacity)
       .ignoresSafeArea()
 
       Group {
@@ -28,12 +30,68 @@ struct CutinView: View {
       HoldToDismissButton(action: onDismiss)
         .padding(28)
     }
-    .foregroundStyle(.white)
-    .environment(\.colorScheme, .dark)
+    .foregroundStyle(palette.text)
+    .fontDesign(theme.fontDesign.swiftUI)
+    .environment(\.colorScheme, theme.backgroundTop.isLight ? .light : .dark)
+    .environment(\.cutinPalette, palette)
+  }
+}
+
+/// The theme's colours as SwiftUI needs them, shared with every part of the cut-in.
+struct CutinPalette {
+  var text: Color
+  var accent: Color
+  /// Readable on `accent`.
+  var accentLabel: Color
+  /// For a meeting that has already started; stays readable on light and dark backgrounds.
+  var late: Color
+
+  init(_ theme: CutinTheme) {
+    text = Color(theme.text)
+    accent = Color(theme.accent)
+    accentLabel = theme.accent.isLight ? .black : .white
+    late =
+      theme.backgroundTop.isLight ? Color(red: 0.78, green: 0.18, blue: 0.12) : Color(red: 1, green: 0.45, blue: 0.4)
+  }
+}
+
+private struct CutinPaletteKey: EnvironmentKey {
+  static let defaultValue = CutinPalette(CutinPreset.allCases[0].theme)
+}
+
+extension EnvironmentValues {
+  var cutinPalette: CutinPalette {
+    get { self[CutinPaletteKey.self] }
+    set { self[CutinPaletteKey.self] = newValue }
+  }
+}
+
+extension Color {
+  init(_ rgb: ThemeColor) {
+    self.init(.sRGB, red: rgb.red, green: rgb.green, blue: rgb.blue)
+  }
+}
+
+extension ThemeColor {
+  init(_ color: Color) {
+    let ns = NSColor(color).usingColorSpace(.sRGB) ?? .black
+    self.init(red: Double(ns.redComponent), green: Double(ns.greenComponent), blue: Double(ns.blueComponent))
+  }
+}
+
+extension CutinFontDesign {
+  var swiftUI: Font.Design {
+    switch self {
+    case .standard: .default
+    case .rounded: .rounded
+    case .serif: .serif
+    case .monospaced: .monospaced
+    }
   }
 }
 
 private struct SingleMeetingView: View {
+  @Environment(\.cutinPalette) private var palette
   let meeting: Meeting
   let onJoin: (Meeting) -> Void
 
@@ -44,11 +102,11 @@ private struct SingleMeetingView: View {
         VStack(spacing: 4) {
           Text(remaining > 0 ? "Meeting starts in" : "Meeting started")
             .font(.system(size: 28, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
+            .foregroundStyle(palette.text.opacity(0.7))
           Text(remaining > 0 ? Countdown.clock(remaining) : "\(Countdown.clock(-remaining)) ago")
-            .font(.system(size: 120, weight: .bold, design: .rounded))
+            .font(.system(size: 120, weight: .bold))
             .monospacedDigit()
-            .foregroundStyle(remaining > 0 ? Color.white : CutinStyle.late)
+            .foregroundStyle(remaining > 0 ? palette.text : palette.late)
         }
       }
       VStack(spacing: 14) {
@@ -58,7 +116,7 @@ private struct SingleMeetingView: View {
           .lineLimit(2)
         Text("\(CutinStyle.timeRange(meeting))  ·  \(meeting.account)")
           .font(.system(size: 18))
-          .foregroundStyle(.white.opacity(0.6))
+          .foregroundStyle(palette.text.opacity(0.6))
         JoinButton(meeting: meeting, large: true, onJoin: onJoin)
           .keyboardShortcut(.defaultAction)
           .padding(.top, 8)
@@ -71,6 +129,7 @@ private struct SingleMeetingView: View {
 /// Several meetings at once: none is singled out, since which one to attend is
 /// exactly the choice the user has to make.
 private struct MeetingChoiceView: View {
+  @Environment(\.cutinPalette) private var palette
   let meetings: [Meeting]
   let onJoin: (Meeting) -> Void
 
@@ -89,7 +148,7 @@ private struct MeetingChoiceView: View {
             : "Join the first one. The next will cut in again before it starts."
         )
         .font(.system(size: 20))
-        .foregroundStyle(.white.opacity(0.65))
+        .foregroundStyle(palette.text.opacity(0.65))
       }
       // Many meetings on a small screen must not push a join button off-screen.
       ViewThatFits(in: .vertical) {
@@ -113,6 +172,7 @@ private struct MeetingChoiceView: View {
 }
 
 private struct MeetingRow: View {
+  @Environment(\.cutinPalette) private var palette
   let meeting: Meeting
   let overlapping: Bool
   let onJoin: (Meeting) -> Void
@@ -123,12 +183,12 @@ private struct MeetingRow: View {
         let remaining = meeting.start.timeIntervalSince(context.date)
         VStack(alignment: .leading, spacing: 4) {
           Text(remaining > 0 ? "in \(Countdown.clock(remaining))" : "\(Countdown.clock(-remaining)) ago")
-            .font(.system(size: 30, weight: .bold, design: .rounded))
+            .font(.system(size: 30, weight: .bold))
             .monospacedDigit()
-            .foregroundStyle(remaining > 0 ? Color.white : CutinStyle.late)
+            .foregroundStyle(remaining > 0 ? palette.text : palette.late)
           Text(CutinStyle.timeRange(meeting))
             .font(.system(size: 15))
-            .foregroundStyle(.white.opacity(0.6))
+            .foregroundStyle(palette.text.opacity(0.6))
         }
         .frame(width: 170, alignment: .leading)
       }
@@ -138,13 +198,13 @@ private struct MeetingRow: View {
           .lineLimit(2)
         HStack(spacing: 8) {
           Text(meeting.account)
-            .foregroundStyle(.white.opacity(0.6))
+            .foregroundStyle(palette.text.opacity(0.6))
           if overlapping {
             Text("Overlaps")
               .padding(.horizontal, 8)
               .padding(.vertical, 2)
-              .background(Capsule().fill(CutinStyle.late.opacity(0.25)))
-              .foregroundStyle(CutinStyle.late)
+              .background(Capsule().fill(palette.late.opacity(0.25)))
+              .foregroundStyle(palette.late)
           }
         }
         .font(.system(size: 15))
@@ -154,12 +214,13 @@ private struct MeetingRow: View {
     }
     .padding(.horizontal, 28)
     .padding(.vertical, 20)
-    .background(RoundedRectangle(cornerRadius: 18).fill(.white.opacity(0.07)))
-    .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.12)))
+    .background(RoundedRectangle(cornerRadius: 18).fill(palette.text.opacity(0.07)))
+    .overlay(RoundedRectangle(cornerRadius: 18).stroke(palette.text.opacity(0.12)))
   }
 }
 
 private struct JoinButton: View {
+  @Environment(\.cutinPalette) private var palette
   let meeting: Meeting
   let large: Bool
   let onJoin: (Meeting) -> Void
@@ -175,7 +236,8 @@ private struct JoinButton: View {
       .font(.system(size: large ? 26 : 20, weight: .bold))
       .padding(.horizontal, large ? 56 : 30)
       .padding(.vertical, large ? 20 : 14)
-      .background(Capsule().fill(Color.accentColor))
+      .background(Capsule().fill(palette.accent))
+      .foregroundStyle(palette.accentLabel)
       .contentShape(Capsule())
     }
     .buttonStyle(.plain)
@@ -184,7 +246,6 @@ private struct JoinButton: View {
 }
 
 private enum CutinStyle {
-  static let late = Color(red: 1, green: 0.45, blue: 0.4)
   private static let timeFormat: Date.FormatStyle = .dateTime.hour().minute()
 
   static func timeRange(_ meeting: Meeting) -> String {
@@ -195,6 +256,7 @@ private enum CutinStyle {
 /// Small and slow on purpose: the cut-in should end by joining, so dismissing takes
 /// a deliberate press-and-hold on a corner target.
 private struct HoldToDismissButton: View {
+  @Environment(\.cutinPalette) private var palette
   let action: () -> Void
   @State private var progress: CGFloat = 0
   private let holdDuration = 1.5
@@ -202,19 +264,19 @@ private struct HoldToDismissButton: View {
   var body: some View {
     VStack(spacing: 6) {
       ZStack {
-        Circle().stroke(.white.opacity(0.25), lineWidth: 2)
+        Circle().stroke(palette.text.opacity(0.25), lineWidth: 2)
         Circle()
           .trim(from: 0, to: progress)
-          .stroke(.white, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+          .stroke(palette.text, style: StrokeStyle(lineWidth: 2, lineCap: .round))
           .rotationEffect(.degrees(-90))
         Image(systemName: "xmark")
           .font(.system(size: 10, weight: .bold))
-          .foregroundStyle(.white.opacity(0.6))
+          .foregroundStyle(palette.text.opacity(0.6))
       }
       .frame(width: 24, height: 24)
       Text("Hold to dismiss")
         .font(.system(size: 10))
-        .foregroundStyle(.white.opacity(0.4))
+        .foregroundStyle(palette.text.opacity(0.4))
     }
     .contentShape(Rectangle())
     .onLongPressGesture(

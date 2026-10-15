@@ -13,6 +13,9 @@ final class CutinPresenter {
   var onDismiss: (() -> Void)?
 
   private(set) var meetings: [Meeting] = []
+  var theme = CutinPreset.allCases[0].theme {
+    didSet { if theme != oldValue, isShowing { rebuild() } }
+  }
   private var windows: [NSWindow] = []
   private var observers: [NSObjectProtocol] = []
 
@@ -84,6 +87,7 @@ final class CutinPresenter {
     window.contentView = NSHostingView(
       rootView: CutinView(
         meetings: meetings,
+        theme: theme,
         onJoin: { [weak self] in self?.onJoin?($0) },
         onDismiss: { [weak self] in self?.onDismiss?() }
       ))
