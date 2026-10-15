@@ -63,8 +63,12 @@ import Testing
     #expect(q["state"] == "st")
     #expect(q["access_type"] == "offline")
     #expect(q["login_hint"] == "me+x@example.com")
-    #expect(q["scope"]?.split(separator: " ").contains("https://www.googleapis.com/auth/calendar.readonly") == true)
-    #expect(q["scope"]?.split(separator: " ").contains("email") == true)
+    // Nothing beyond reading the calendar list and events: no identity, no settings.
+    #expect(
+      Set(q["scope"]?.split(separator: " ").map(String.init) ?? []) == [
+        "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+        "https://www.googleapis.com/auth/calendar.events.readonly",
+      ])
   }
 
   @Test func authorizationURLOmitsLoginHintWhenAbsent() {
@@ -89,15 +93,22 @@ import Testing
       ]))
   }
 
-  @Test func decodesEmailFromIDToken() throws {
-    // Header and signature are irrelevant: the token arrives over TLS straight from Google.
-    let payload = Data(#"{"email":"me@example.com","sub":"1"}"#.utf8).base64EncodedString()
-      .replacingOccurrences(of: "=", with: "")
-      .replacingOccurrences(of: "+", with: "-")
-      .replacingOccurrences(of: "/", with: "_")
-    let token = "eyJhbGciOiJSUzI1NiJ9.\(payload).sig"
-    #expect(IDToken.email(from: token) == "me@example.com")
-    #expect(IDToken.email(from: "garbage") == nil)
+  @Test(
+    arguments: [
+      (
+        "https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+        true
+      ),
+      ("https://www.googleapis.com/auth/calendar.calendarlist.readonly", false),
+      ("", false),
+    ] as [(String, Bool)])
+  func tellsWhetherTheUserGrantedEverythingNeeded(granted: String, expected: Bool) {
+    #expect(OAuthClient.grantsEverythingNeeded(granted) == expected)
+  }
+
+  @Test func readsTheGrantedScopesFromTheTokenResponse() throws {
+    let json = #"{"access_token":"a","expires_in":3599,"refresh_token":"r","scope":"x y"}"#
+    #expect(try JSONDecoder().decode(TokenResponse.self, from: Data(json.utf8)).scope == "x y")
   }
 
   @Test func parsesRedirectRequestLine() {

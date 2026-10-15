@@ -7,7 +7,7 @@ enum AuthError: LocalizedError {
   case denied(String)
   case timedOut
   case noRefreshToken
-  case noEmail
+  case calendarAccessNotGranted
   case tokenEndpoint(String)
 
   var errorDescription: String? {
@@ -15,7 +15,8 @@ enum AuthError: LocalizedError {
     case .denied(let reason): "Google sign-in was cancelled (\(reason))."
     case .timedOut: "Google sign-in timed out."
     case .noRefreshToken: "Google did not return a refresh token."
-    case .noEmail: "Google did not return the account's email address."
+    case .calendarAccessNotGranted:
+      "Calendrop needs to see your calendars and their events. Sign in again and leave both permissions ticked."
     case .tokenEndpoint(let message): "Google token endpoint: \(message)"
     }
   }
@@ -25,7 +26,14 @@ enum AuthError: LocalizedError {
 /// 127.0.0.1, and the code is exchanged with PKCE.
 @MainActor
 enum LoopbackAuthenticator {
-  static func authorize(client: OAuthClient, loginHint: String?) async throws -> (email: String, refreshToken: String) {
+  /// A grant for everything Calendrop reads, with the refresh token that keeps it.
+  struct Grant {
+    var accessToken: String
+    var expiresIn: Double
+    var refreshToken: String
+  }
+
+  static func authorize(client: OAuthClient, loginHint: String?) async throws -> Grant {
     let server = try LoopbackServer()
     let port = try await server.start()
     defer { server.stop() }
@@ -57,7 +65,7 @@ enum LoopbackAuthenticator {
   }
 
   private static func exchange(client: OAuthClient, code: String, verifier: String, redirectURI: String)
-    async throws -> (email: String, refreshToken: String)
+    async throws -> Grant
   {
     var request = URLRequest(url: OAuthClient.tokenEndpoint)
     request.httpMethod = "POST"
@@ -69,8 +77,8 @@ enum LoopbackAuthenticator {
     }
     let token = try JSONDecoder().decode(TokenResponse.self, from: data)
     guard let refreshToken = token.refreshToken else { throw AuthError.noRefreshToken }
-    guard let email = token.idToken.flatMap(IDToken.email(from:)) else { throw AuthError.noEmail }
-    return (email.lowercased(), refreshToken)
+    guard OAuthClient.grantsEverythingNeeded(token.scope ?? "") else { throw AuthError.calendarAccessNotGranted }
+    return Grant(accessToken: token.accessToken, expiresIn: token.expiresIn, refreshToken: refreshToken)
   }
 }
 

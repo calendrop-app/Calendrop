@@ -79,18 +79,18 @@ public enum SampleCalendar {
     }
   }
 
-  /// The calendars a sample account offers, some of them unticked in "Google Calendar".
+  /// The calendars a sample account offers: its main calendar first, whose ID is the
+  /// account's address as with a real account, then calendars it can opt into.
   public static func calendars(for account: String) -> [CalendarRef] {
-    let entries: [(String, String, Bool)] =
+    let entries: [(slug: String, name: String)] =
       switch account {
-      case accounts[0]:
-        [("work", "Work", true), ("apollo", "Project Apollo", true), ("team-holidays", "Team holidays", false)]
-      case accounts[1]:
-        [("personal", "Personal", true), ("family", "Family", true), ("birthdays", "Birthdays", false)]
-      default:
-        [("main", "Calendar", true), ("shared", "Shared with me", false)]
+      case accounts[0]: [("work", "Work"), ("apollo", "Project Apollo"), ("team-holidays", "Team holidays")]
+      case accounts[1]: [("personal", "Personal"), ("family", "Family"), ("birthdays", "Birthdays")]
+      default: [("main", "Calendar"), ("shared", "Shared with me")]
       }
-    return entries.map { CalendarRef(id: calendarID(account, $0.0), name: $0.1, isSelectedInGoogle: $0.2) }
+    return entries.map {
+      CalendarRef(id: calendarID(account, $0.slug), name: $0.name, isPrimary: mainSlugs.contains($0.slug))
+    }
   }
 
   /// The address the next sample sign-in yields: the named sample accounts first.
@@ -137,7 +137,11 @@ public enum SampleCalendar {
     }
   }
 
-  private static func calendarID(_ account: String, _ slug: String) -> String { "\(account)/\(slug)" }
+  private static let mainSlugs: Set<String> = ["work", "personal", "main"]
+
+  private static func calendarID(_ account: String, _ slug: String) -> String {
+    mainSlugs.contains(slug) ? account : "\(account)/\(slug)"
+  }
 
   private static let minute: TimeInterval = 60
 

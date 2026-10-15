@@ -6,12 +6,12 @@ between the user's Macs.
 ## Accounts
 
 - Signing in happens in the default browser; nothing has to be configured
-  first. Calendrop only ever asks for read-only calendar access and the account's
-  email address.
+  first. Calendrop asks only to see the account's list of calendars and their
+  events. A sign-in that leaves either out is turned back with an explanation.
 - Each account has a label and a colour that the menu, the cut-in and settings
   show in place of its address.
 - Meetings come from the calendars the user chose for each account. Until the
-  user chooses, those ticked in Google Calendar are used.
+  user chooses, only the account's main calendar is used.
 - Removing an account asks for confirmation first, since it removes the
   account from every Mac that shares the configuration.
 - An event visible through several accounts is shown once.
@@ -44,7 +44,7 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 | `email` | string | The account's address; required |
 | `label` | string | Shown instead of the address |
 | `color` | string | `#RRGGBB`; a colour not yet used by another account when missing |
-| `calendarIDs` | array of strings | Google Calendar IDs to read; when missing, those ticked in Google Calendar |
+| `calendarIDs` | array of strings | Google Calendar IDs to read; when missing, the account's main calendar only |
 
 An entry may also be a bare address string, as older versions wrote. An entry
 that cannot be read is skipped without affecting the others.

@@ -37,7 +37,7 @@ import Testing
     try #require(
       GoogleCalendarParser.meetings(
         fromEvents: Data(json.utf8), account: "me@example.com",
-        calendar: CalendarRef(id: "c", name: "Work", isSelectedInGoogle: true)
+        calendar: CalendarRef(id: "c", name: "Work", isPrimary: true)
       ).first)
   }
 

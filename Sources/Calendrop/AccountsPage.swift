@@ -195,7 +195,7 @@ private struct CalendarRows: View {
       ForEach(all) { calendar in
         SettingsRow(
           calendar.name,
-          description: calendar.isSelectedInGoogle ? nil : "Hidden in Google Calendar"
+          description: calendar.isPrimary ? "Main calendar" : nil
         ) {
           Toggle(
             "",
@@ -208,8 +208,8 @@ private struct CalendarRows: View {
         }
       }
       if account.calendarIDs != nil {
-        SettingsRow("Calendar choice", description: "Chosen here rather than following Google Calendar.") {
-          Button("Follow Google Calendar") { model.updateAccount(account.email) { $0.calendarIDs = nil } }
+        SettingsRow("Calendar choice", description: "Other calendars are turned on here.") {
+          Button("Use Only the Main Calendar") { model.updateAccount(account.email) { $0.calendarIDs = nil } }
         }
       }
     }

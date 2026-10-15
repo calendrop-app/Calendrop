@@ -29,9 +29,9 @@ import Testing
     }
   }
 
-  @Test func someMeetingsSitOnCalendarsGoogleLeavesUnticked() {
+  @Test func someMeetingsSitBeyondTheMainCalendar() {
     let unticked = SampleCalendar.accounts.flatMap { SampleCalendar.calendars(for: $0) }.filter {
-      !$0.isSelectedInGoogle
+      !$0.isPrimary
     }
     #expect(schedule.contains { m in unticked.contains { $0.id == m.calendarID } })
   }
@@ -53,7 +53,7 @@ import Testing
     let added = SampleCalendar.newAccount(existing: SampleCalendar.accounts)
     #expect(!SampleCalendar.accounts.contains(added))
     #expect(SampleCalendar.newAccount(existing: SampleCalendar.accounts + [added]) != added)
-    #expect(SampleCalendar.calendars(for: added).contains { $0.isSelectedInGoogle })
+    #expect(SampleCalendar.calendars(for: added).contains { $0.isPrimary })
     #expect(SampleCalendar.meetings(now: now, accounts: [added]).allSatisfy { $0.account == added })
     #expect(!SampleCalendar.meetings(now: now, accounts: [added]).isEmpty)
   }
@@ -118,5 +118,13 @@ import Testing
   @Test func isSortedAndUnique() {
     #expect(schedule == schedule.sorted { $0.start < $1.start })
     #expect(Set(schedule.map(\.acknowledgementKey)).count == schedule.count)
+  }
+}
+
+@Suite struct SampleMainCalendarTests {
+  @Test(arguments: SampleCalendar.accounts + ["sample1@example.com"])
+  func eachAccountHasOneMainCalendarNamedAfterIt(account: String) {
+    let main = SampleCalendar.calendars(for: account).filter { $0.isPrimary }
+    #expect(main.map(\.id) == [account])
   }
 }

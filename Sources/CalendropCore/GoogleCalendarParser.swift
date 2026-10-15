@@ -3,13 +3,14 @@ import Foundation
 public struct CalendarRef: Hashable, Sendable, Identifiable {
   public var id: String
   public var name: String
-  /// Ticked in Google Calendar's sidebar; what an account uses until the user chooses.
-  public var isSelectedInGoogle: Bool
+  /// The account's own calendar, whose ID is its address; the only one an account
+  /// reads until the user chooses others.
+  public var isPrimary: Bool
 
-  public init(id: String, name: String, isSelectedInGoogle: Bool) {
+  public init(id: String, name: String, isPrimary: Bool) {
     self.id = id
     self.name = name
-    self.isSelectedInGoogle = isSelectedInGoogle
+    self.isPrimary = isPrimary
   }
 }
 
@@ -66,11 +67,21 @@ public enum GoogleCalendarParser {
     try JSONDecoder().decode(PageInfo.self, from: data).nextPageToken
   }
 
-  /// Every calendar of the account, each marked with whether Google Calendar shows it.
+  /// The account's address: the ID of its main calendar, which every Google
+  /// account has and cannot delete.
+  public static func accountAddress(fromPrimaryCalendar data: Data) throws -> String {
+    let entry = try JSONDecoder().decode(CalendarListResponse.Entry.self, from: data)
+    guard entry.primary == true else {
+      throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Not the main calendar"))
+    }
+    return entry.id.lowercased()
+  }
+
+  /// Every calendar of the account, with its main calendar marked.
   public static func calendars(fromCalendarList data: Data) throws -> [CalendarRef] {
     try JSONDecoder().decode(CalendarListResponse.self, from: data).items.map {
       CalendarRef(
-        id: $0.id, name: $0.summaryOverride ?? $0.summary ?? $0.id, isSelectedInGoogle: $0.selected == true)
+        id: $0.id, name: $0.summaryOverride ?? $0.summary ?? $0.id, isPrimary: $0.primary == true)
     }
   }
 
@@ -142,6 +153,6 @@ private struct CalendarListResponse: Decodable {
     var id: String
     var summary: String?
     var summaryOverride: String?
-    var selected: Bool?
+    var primary: Bool?
   }
 }

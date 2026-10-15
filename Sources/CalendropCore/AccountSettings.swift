@@ -6,7 +6,7 @@ public struct AccountSettings: Codable, Equatable, Sendable, Identifiable {
   /// Shown instead of the address wherever the account is named.
   public var label: String?
   public var color: ThemeColor
-  /// The calendars Calendrop reads, or nil to follow what is ticked in Google Calendar.
+  /// The calendars Calendrop reads, or nil for the main calendar alone.
   public var calendarIDs: [String]?
 
   public init(email: String, label: String? = nil, color: ThemeColor, calendarIDs: [String]? = nil) {
@@ -24,7 +24,7 @@ public struct AccountSettings: Codable, Equatable, Sendable, Identifiable {
   }
 
   public func uses(_ calendar: CalendarRef) -> Bool {
-    calendarIDs.map { $0.contains(calendar.id) } ?? calendar.isSelectedInGoogle
+    calendarIDs.map { $0.contains(calendar.id) } ?? calendar.isPrimary
   }
 
   /// Whether `meeting` sits on a calendar this account uses; a calendar no longer
@@ -33,10 +33,10 @@ public struct AccountSettings: Codable, Equatable, Sendable, Identifiable {
     calendars.first { $0.id == meeting.calendarID }.map(uses) ?? false
   }
 
-  /// Turns one calendar on or off. The first choice starts from Google Calendar's
-  /// selection, so choosing one calendar never silently drops the others.
+  /// Turns one calendar on or off. The first choice starts from the main calendar,
+  /// so turning another one on keeps the main one.
   public mutating func setCalendar(_ calendar: CalendarRef, used: Bool, among all: [CalendarRef]) {
-    var chosen = Set(calendarIDs ?? all.filter(\.isSelectedInGoogle).map(\.id))
+    var chosen = Set(calendarIDs ?? all.filter(\.isPrimary).map(\.id))
     if used { chosen.insert(calendar.id) } else { chosen.remove(calendar.id) }
     let known = all.map(\.id)
     calendarIDs = known.filter(chosen.contains) + chosen.subtracting(known).sorted()

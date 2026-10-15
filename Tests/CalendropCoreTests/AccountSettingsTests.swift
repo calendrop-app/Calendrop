@@ -4,8 +4,8 @@ import Testing
 @testable import CalendropCore
 
 @Suite struct AccountSettingsTests {
-  private let work = CalendarRef(id: "work", name: "Work", isSelectedInGoogle: true)
-  private let holidays = CalendarRef(id: "holidays", name: "Holidays", isSelectedInGoogle: false)
+  private let work = CalendarRef(id: "work", name: "Work", isPrimary: true)
+  private let holidays = CalendarRef(id: "holidays", name: "Holidays", isPrimary: false)
 
   @Test func showsTheLabelOrElseTheAddress() {
     var account = AccountSettings(email: "me@example.com", color: AccountPalette.colors[0])

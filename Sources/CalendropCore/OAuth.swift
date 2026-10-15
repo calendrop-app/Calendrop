@@ -29,7 +29,18 @@ public struct OAuthClient: Sendable, Equatable {
 
   public static let authorizationEndpoint = URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!
   public static let tokenEndpoint = URL(string: "https://oauth2.googleapis.com/token")!
-  public static let scopes = ["openid", "email", "https://www.googleapis.com/auth/calendar.readonly"]
+  /// Only what Calendrop reads: the calendar list and the events on it. The account's
+  /// address comes from its main calendar, so no identity scope is needed either.
+  public static let scopes = [
+    "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+    "https://www.googleapis.com/auth/calendar.events.readonly",
+  ]
+
+  /// Google lets the user untick a scope on the consent screen; a grant missing one
+  /// would sign in yet never read a meeting.
+  public static func grantsEverythingNeeded(_ granted: String) -> Bool {
+    Set(scopes).isSubset(of: granted.split(separator: " ").map(String.init))
+  }
 
   public func authorizationURL(redirectURI: String, codeChallenge: String, state: String, loginHint: String?) -> URL {
     var components = URLComponents(url: Self.authorizationEndpoint, resolvingAgainstBaseURL: false)!
@@ -77,13 +88,14 @@ public struct TokenResponse: Decodable, Sendable {
   public var accessToken: String
   public var expiresIn: Double
   public var refreshToken: String?
-  public var idToken: String?
+  /// The scopes the user actually granted, space separated.
+  public var scope: String?
 
   enum CodingKeys: String, CodingKey {
     case accessToken = "access_token"
     case expiresIn = "expires_in"
     case refreshToken = "refresh_token"
-    case idToken = "id_token"
+    case scope
   }
 }
 
@@ -115,21 +127,6 @@ public enum PKCE {
       .replacingOccurrences(of: "+", with: "-")
       .replacingOccurrences(of: "/", with: "_")
       .replacingOccurrences(of: "=", with: "")
-  }
-}
-
-public enum IDToken {
-  /// Reads the `email` claim without verifying the signature: the token comes
-  /// straight from Google's token endpoint over TLS, never from a third party.
-  public static func email(from token: String) -> String? {
-    let parts = token.split(separator: ".")
-    guard parts.count == 3 else { return nil }
-    var base64 = parts[1].replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-    base64 += String(repeating: "=", count: (4 - base64.count % 4) % 4)
-    guard let data = Data(base64Encoded: base64),
-      let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-    else { return nil }
-    return object["email"] as? String
   }
 }
 

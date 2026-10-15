@@ -7,7 +7,7 @@ import Testing
   private func parse(_ json: String) throws -> [Meeting] {
     try GoogleCalendarParser.meetings(
       fromEvents: Data(json.utf8), account: "me@example.com",
-      calendar: CalendarRef(id: "work-calendar", name: "Work", isSelectedInGoogle: true))
+      calendar: CalendarRef(id: "work-calendar", name: "Work", isPrimary: true))
   }
 
   @Test func parsesTimedEvent() throws {
@@ -92,10 +92,10 @@ import Testing
     #expect(try GoogleCalendarParser.nextPageToken(from: Data(#"{"items":[]}"#.utf8)) == nil)
   }
 
-  @Test func reportsAPrimaryCalendarTheUserUntickedAsUnselected() throws {
+  @Test func marksTheMainCalendarEvenWhenGoogleHidesIt() throws {
     let calendars = try GoogleCalendarParser.calendars(
       fromCalendarList: Data(#"{"items":[{"id":"me@example.com","primary":true}]}"#.utf8))
-    #expect(calendars.map(\.isSelectedInGoogle) == [false])
+    #expect(calendars.map(\.isPrimary) == [true])
   }
 
   @Test func parsesEveryCalendarWithItsGoogleSelection() throws {
@@ -113,6 +113,18 @@ import Testing
         "me@example.com", "team#holiday@group.v.calendar.google.com", "team@group.calendar.google.com",
       ])
     #expect(calendars.map(\.name) == ["me@example.com", "Holidays", "チーム"])
-    #expect(calendars.map(\.isSelectedInGoogle) == [true, false, true])
+    #expect(calendars.map(\.isPrimary) == [true, false, false])
+  }
+}
+
+@Suite struct PrimaryCalendarTests {
+  @Test func readsTheAccountAddressFromItsMainCalendar() throws {
+    let entry = Data(#"{"id":"Me@Example.com","summary":"Me","primary":true}"#.utf8)
+    #expect(try GoogleCalendarParser.accountAddress(fromPrimaryCalendar: entry) == "me@example.com")
+  }
+
+  @Test func refusesAnEntryThatIsNotTheMainCalendar() {
+    let entry = Data(#"{"id":"team@group.calendar.google.com","summary":"Team"}"#.utf8)
+    #expect(throws: (any Error).self) { try GoogleCalendarParser.accountAddress(fromPrimaryCalendar: entry) }
   }
 }

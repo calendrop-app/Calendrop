@@ -16,7 +16,7 @@ protocol CalendarSource: AnyObject {
   func signIn(hint: String?, existing: [String]) async throws -> String
   /// Drops what this Mac holds for `account`.
   func forget(_ account: String)
-  /// Every calendar the account offers, marked with Google Calendar's own selection.
+  /// Every calendar the account offers, with its main calendar marked.
   func calendars(account: String) async throws -> [CalendarRef]
   /// Every meeting between `from` and `to` on `calendars`.
   func meetings(account: String, calendars: [CalendarRef], from: Date, to: Date) async throws -> [Meeting]

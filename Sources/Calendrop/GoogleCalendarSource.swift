@@ -38,9 +38,13 @@ final class GoogleCalendarSource: CalendarSource {
   }
 
   func signIn(hint: String?, existing: [String]) async throws -> String {
-    let (email, refreshToken) = try await LoopbackAuthenticator.authorize(client: client, loginHint: hint)
-    try Keychain.setRefreshToken(refreshToken, for: email)
-    accessTokens[email] = nil
+    let grant = try await LoopbackAuthenticator.authorize(client: client, loginHint: hint)
+    // The main calendar's ID is the account's address, so no identity scope is asked for.
+    let primary = try await get(
+      api.appendingPathComponent("users/me/calendarList/primary"), query: [], token: grant.accessToken, account: "")
+    let email = try GoogleCalendarParser.accountAddress(fromPrimaryCalendar: primary)
+    try Keychain.setRefreshToken(grant.refreshToken, for: email)
+    accessTokens[email] = AccessToken(value: grant.accessToken, expiry: Date().addingTimeInterval(grant.expiresIn))
     return email
   }
 
@@ -49,7 +53,7 @@ final class GoogleCalendarSource: CalendarSource {
     accessTokens[account] = nil
   }
 
-  /// Every calendar the account can read, marked with Google Calendar's own selection.
+  /// Every calendar the account can read, with its main calendar marked.
   func calendars(account: String) async throws -> [CalendarRef] {
     let token = try await accessToken(for: account)
     var calendars: [CalendarRef] = []
