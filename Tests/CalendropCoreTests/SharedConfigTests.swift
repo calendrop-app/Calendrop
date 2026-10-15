@@ -19,8 +19,6 @@ import Testing
   @Test func roundTripsAndCreatesDirectories() throws {
     let store = ConfigStore(url: try tempDir().appendingPathComponent("nested/config.json"))
     var config = SharedConfig()
-    config.clientID = "cid"
-    config.clientSecret = "sec"
     config.accounts = ["a@example.com", "b@example.com"]
     config.leadMinutes = 5
     try store.save(config)
@@ -29,16 +27,16 @@ import Testing
 
   @Test func toleratesMissingAndUnknownKeys() throws {
     let url = try tempDir().appendingPathComponent("config.json")
-    try Data(#"{"accounts":["a@example.com"],"futureKey":1}"#.utf8).write(to: url)
+    try Data(#"{"accounts":["a@example.com"],"clientID":"left over","futureKey":1}"#.utf8).write(to: url)
     let config = ConfigStore(url: url).load()
     #expect(config.accounts == ["a@example.com"])
     #expect(config.leadMinutes == 2)
-    #expect(config.clientID == "")
   }
 
-  @Test func neverStoresTokens() throws {
-    let encoded = String(decoding: try JSONEncoder().encode(SharedConfig()), as: UTF8.self)
-    #expect(!encoded.lowercased().contains("token"))
+  @Test func neverStoresTokensOrClientCredentials() throws {
+    let encoded = String(decoding: try JSONEncoder().encode(SharedConfig()), as: UTF8.self).lowercased()
+    #expect(!encoded.contains("token"))
+    #expect(!encoded.contains("client"))
   }
 
   @Test func addingAccountIsCaseInsensitiveAndIdempotent() {
@@ -48,16 +46,6 @@ import Testing
     #expect(config.accounts == ["me@example.com"])
     config.removeAccount("ME@example.com")
     #expect(config.accounts.isEmpty)
-  }
-
-  @Test func oauthClientTrimsPastedWhitespace() {
-    var config = SharedConfig()
-    #expect(config.oauthClient == nil)
-    config.clientID = "  \n"
-    #expect(config.oauthClient == nil)
-    config.clientID = " cid \n"
-    config.clientSecret = "sec "
-    #expect(config.oauthClient == OAuthClient(id: "cid", secret: "sec"))
   }
 
   @Test func prefersICloudDriveWhenPresent() throws {

@@ -19,6 +19,10 @@ final class AppModel: ObservableObject {
   /// Demo mode runs on `DemoCalendar` and never reads or writes Google, the shared
   /// config file, the Keychain or the persisted acknowledgements.
   let isDemo: Bool
+  /// Embedded by `just bundle`; nil in a build made without the maintainer's client.
+  let oauthClient = OAuthClient(infoDictionary: Bundle.main.infoDictionary ?? [:])
+  static let missingClientMessage =
+    "This build of Calendrop has no Google sign-in. Build it with the OAuth client as the README describes."
   private let service = GoogleCalendarService()
   private var isRefreshing = false
   private var demoAcknowledged: Set<String> = []
@@ -40,7 +44,7 @@ final class AppModel: ObservableObject {
 
   var needsAttention: Bool {
     if isDemo { return false }
-    return config.oauthClient == nil || config.accounts.isEmpty || accountStates.values.contains { $0 != .ok }
+    return oauthClient == nil || config.accounts.isEmpty || accountStates.values.contains { $0 != .ok }
   }
 
   func state(of account: String) -> AccountState {
@@ -76,10 +80,8 @@ final class AppModel: ObservableObject {
       lastError = "Sign-in is disabled in demo mode."
       return
     }
-    guard let client = config.oauthClient else {
-      lastError = "Set the Google OAuth client ID first."
-      return
-    }
+    // Settings already shows `missingClientMessage` whenever the client is absent.
+    guard let client = oauthClient else { return }
     isSigningIn = true
     defer { isSigningIn = false }
     do {
@@ -119,7 +121,7 @@ final class AppModel: ObservableObject {
     defer { isRefreshing = false }
 
     reloadConfigFromDisk()
-    guard let client = config.oauthClient else {
+    guard let client = oauthClient else {
       meetings = []
       return
     }

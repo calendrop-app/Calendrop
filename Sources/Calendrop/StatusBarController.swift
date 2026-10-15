@@ -64,8 +64,11 @@ final class StatusBarController: NSObject, NSMenuDelegate {
       tryItem.submenu = scenarios
       menu.addItem(tryItem)
       menu.addItem(.separator())
-    } else if model.config.oauthClient == nil {
-      menu.addItem(action("Set Up Google OAuth Client…", #selector(openSettings)))
+    } else if model.oauthClient == nil {
+      let missing = NSMenuItem(title: "Google sign-in is not built in", action: nil, keyEquivalent: "")
+      missing.image = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: nil)
+      missing.isEnabled = false
+      menu.addItem(missing)
       menu.addItem(.separator())
     } else if model.config.accounts.isEmpty {
       menu.addItem(action("Add Google Account…", #selector(addAccount)))

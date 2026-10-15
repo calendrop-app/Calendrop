@@ -12,6 +12,21 @@ public struct OAuthClient: Sendable, Equatable {
     self.secret = secret
   }
 
+  public static let idInfoKey = "CalendropGoogleClientID"
+  public static let secretInfoKey = "CalendropGoogleClientSecret"
+
+  /// The client embedded in the app bundle at build time, or nil for a build made
+  /// without one. Google's token endpoint rejects a Desktop client without its secret.
+  public init?(infoDictionary info: [String: Any]) {
+    func value(_ key: String) -> String {
+      (info[key] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    let id = value(Self.idInfoKey)
+    let secret = value(Self.secretInfoKey)
+    guard !id.isEmpty, !secret.isEmpty else { return nil }
+    self.init(id: id, secret: secret)
+  }
+
   public static let authorizationEndpoint = URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!
   public static let tokenEndpoint = URL(string: "https://oauth2.googleapis.com/token")!
   public static let scopes = ["openid", "email", "https://www.googleapis.com/auth/calendar.readonly"]
@@ -74,6 +89,14 @@ public struct TokenResponse: Decodable, Sendable {
 
 public struct TokenErrorResponse: Decodable, Sendable {
   public var error: String
+
+  /// A revoked or expired grant cannot recover without the user. Client errors such
+  /// as `unauthorized_client` are not treated the same way: they point at the
+  /// embedded client, and dropping every user's token over a fixable client problem
+  /// would force everyone to sign in again on every Mac.
+  public var requiresSignIn: Bool {
+    error == "invalid_grant"
+  }
 }
 
 public enum PKCE {

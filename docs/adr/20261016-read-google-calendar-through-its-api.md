@@ -1,6 +1,7 @@
 # Read Google Calendar through its API
 
-Status: Accepted
+Status: Accepted; who provides the OAuth client is superseded by
+`20261016-ship-the-google-oauth-client-inside-the-app.md`
 
 ## Context
 

@@ -2,12 +2,11 @@ import Foundation
 
 /// Settings shared between the user's Macs through iCloud Drive.
 ///
-/// Deliberately holds no tokens. Each Mac keeps its own refresh tokens in its local
-/// Keychain; an account listed here without a local token is shown as "sign in
-/// required", and signing in sends its address to Google as `login_hint`.
+/// Deliberately holds no tokens and no OAuth client: the client ships inside the
+/// app, and each Mac keeps its own refresh tokens in its local Keychain. An account
+/// listed here without a local token is shown as "sign in required", and signing in
+/// sends its address to Google as `login_hint`.
 public struct SharedConfig: Codable, Equatable, Sendable {
-  public var clientID: String = ""
-  public var clientSecret: String = ""
   public var accounts: [String] = []
   public var leadMinutes: Int = 2
   public var appearance = CutinAppearance()
@@ -17,17 +16,9 @@ public struct SharedConfig: Codable, Equatable, Sendable {
   public init(from decoder: Decoder) throws {
     let c = try decoder.container(keyedBy: CodingKeys.self)
     let defaults = SharedConfig()
-    clientID = try c.decodeIfPresent(String.self, forKey: .clientID) ?? defaults.clientID
-    clientSecret = try c.decodeIfPresent(String.self, forKey: .clientSecret) ?? defaults.clientSecret
     accounts = try c.decodeIfPresent([String].self, forKey: .accounts) ?? defaults.accounts
     leadMinutes = try c.decodeIfPresent(Int.self, forKey: .leadMinutes) ?? defaults.leadMinutes
     appearance = (try? c.decodeIfPresent(CutinAppearance.self, forKey: .appearance)) ?? defaults.appearance
-  }
-
-  public var oauthClient: OAuthClient? {
-    let id = clientID.trimmingCharacters(in: .whitespacesAndNewlines)
-    let secret = clientSecret.trimmingCharacters(in: .whitespacesAndNewlines)
-    return id.isEmpty ? nil : OAuthClient(id: id, secret: secret)
   }
 
   public mutating func addAccount(_ email: String) {

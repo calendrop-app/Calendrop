@@ -5,8 +5,9 @@ between the user's Macs.
 
 ## Accounts
 
-- Signing in happens in the default browser. Calendrop only ever asks for
-  read-only calendar access and the account's email address.
+- Signing in happens in the default browser; nothing has to be configured
+  first. Calendrop only ever asks for read-only calendar access and the account's
+  email address.
 - Meetings come from the calendars the user has selected in Google Calendar.
 - An event visible through several accounts is shown once.
 - Google Meet links and Google Calendar event pages open as the account the
@@ -26,8 +27,6 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 
 | Key | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `clientID` | string | `""` | Client ID of a Google OAuth client of type "Desktop app" |
-| `clientSecret` | string | `""` | That client's secret |
 | `accounts` | array of strings | `[]` | Email addresses of the accounts to read, in lower case |
 | `leadMinutes` | integer | `2` | Minutes before the start that the cut-in appears |
 | `appearance` | object | the Midnight preset | How the cut-in looks; see below |

@@ -77,8 +77,7 @@ final class GoogleCalendarService {
     let (data, response) = try await URLSession.shared.data(for: request)
     let status = (response as? HTTPURLResponse)?.statusCode ?? 0
     guard status == 200 else {
-      // A revoked or expired grant cannot recover without the user.
-      if let error = try? JSONDecoder().decode(TokenErrorResponse.self, from: data), error.error == "invalid_grant" {
+      if let error = try? JSONDecoder().decode(TokenErrorResponse.self, from: data), error.requiresSignIn {
         Keychain.deleteRefreshToken(for: account)
         throw CalendarError.needsSignIn
       }

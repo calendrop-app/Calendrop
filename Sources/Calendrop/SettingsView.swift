@@ -128,29 +128,16 @@ private struct AccountsPage: View {
       } label: {
         Label(model.isSigningIn ? "Waiting for the browser…" : "Add Account…", systemImage: "plus")
       }
-      .disabled(model.isDemo || model.config.oauthClient == nil || model.isSigningIn)
+      .disabled(model.isDemo || model.oauthClient == nil || model.isSigningIn)
     }
 
-    SettingsGroup(
-      "Google OAuth client",
-      note: "The Desktop app client created in Google Cloud Console. It is shared with your other Macs."
-    ) {
-      SettingsRow("Client ID") {
-        TextField("", text: binding(\.clientID), prompt: Text("…apps.googleusercontent.com"))
-          .frame(width: 320)
-      }
-      SettingsRow("Client secret") {
-        SecureField("", text: binding(\.clientSecret)).frame(width: 320)
-      }
+    if model.oauthClient == nil, !model.isDemo {
+      SettingsWarning(message: AppModel.missingClientMessage)
     }
 
     if let error = model.lastError {
       SettingsWarning(message: error)
     }
-  }
-
-  private func binding<T>(_ keyPath: WritableKeyPath<SharedConfig, T>) -> Binding<T> {
-    Binding(get: { model.config[keyPath: keyPath] }, set: { v in model.updateConfig { $0[keyPath: keyPath] = v } })
   }
 }
 
@@ -164,7 +151,7 @@ private struct AccountRow: View {
       HStack(spacing: 8) {
         if state != .ok {
           Button("Sign In…") { Task { await model.signIn(hint: account) } }
-            .disabled(model.isDemo || model.isSigningIn)
+            .disabled(model.isDemo || model.oauthClient == nil || model.isSigningIn)
         }
         Button("Remove", role: .destructive) { model.remove(account: account) }
       }

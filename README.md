@@ -34,17 +34,36 @@ launches Calendrop with `--demo`: the menu fills with sample meetings, and
 meetings close together. Nothing is read from or written to Google, the shared
 configuration or the Keychain.
 
-## Set up Google access
+## Add Google accounts
+
+Open **Settings → Accounts**, press **Add Account…**, and sign in in the
+browser. Repeat for each Google account.
+
+### Building with Google sign-in
+
+Sign-in needs a Google OAuth client embedded in the app. A build without one
+works in every other way but cannot add Google accounts. Whoever builds Calendrop
+sets one up once:
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), create a
-   project, enable the **Google Calendar API**, and configure the OAuth consent
-   screen (add yourself as a test user while the app is in testing).
-2. Create an **OAuth client ID** of type **Desktop app**.
-3. Open Calendrop's settings, paste the client ID and secret, and press
-   **Add Account…** for each Google account.
+   project and enable the **Google Calendar API**.
+2. Configure the OAuth consent screen. While its publishing status is
+   **Testing**, only listed test users can sign in and Google expires their
+   sign-in after seven days; publish it to **In production** to avoid that
+   (unverified apps show a warning and are limited to 100 users).
+3. Create an **OAuth client ID** of type **Desktop app**.
 
-Google treats the secret of a Desktop client as non-confidential; it alone
-grants access to nothing.
+Then pass its ID and secret to the build through the environment; `just
+bundle` (and `just run`, `just install`) embed them:
+
+```sh
+CALENDROP_GOOGLE_CLIENT_ID=… CALENDROP_GOOGLE_CLIENT_SECRET=… just install
+```
+
+Keep them out of the repository — for example in a password manager whose CLI
+can inject them, such as `op run` for 1Password. Google treats a Desktop
+client's secret as non-confidential: the loopback redirect, PKCE and the
+user's own consent protect each sign-in.
 
 ## Using several Macs
 
@@ -52,7 +71,7 @@ Calendrop keeps two kinds of state apart:
 
 | What | Where | Shared |
 | --- | --- | --- |
-| OAuth client, account list, lead time | `~/Library/Mobile Documents/com~apple~CloudDocs/Calendrop/config.json` (iCloud Drive), or `~/Library/Application Support/Calendrop/` without iCloud Drive | yes |
+| Account list, lead time, cut-in style | `~/Library/Mobile Documents/com~apple~CloudDocs/Calendrop/config.json` (iCloud Drive), or `~/Library/Application Support/Calendrop/` without iCloud Drive | yes |
 | Refresh tokens | login Keychain, non-synchronizable, this device only | no |
 
 On another Mac the accounts appear as "Sign-in required". Signing in opens the

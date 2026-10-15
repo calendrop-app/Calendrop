@@ -6,6 +6,37 @@ import Testing
 @Suite struct OAuthTests {
   let client = OAuthClient(id: "cid.apps.googleusercontent.com", secret: "sec")
 
+  @Test func readsTheClientEmbeddedInTheBundle() {
+    let info: [String: Any] = [
+      "CalendropGoogleClientID": " cid.apps.googleusercontent.com\n", "CalendropGoogleClientSecret": "sec",
+    ]
+    #expect(OAuthClient(infoDictionary: info) == OAuthClient(id: "cid.apps.googleusercontent.com", secret: "sec"))
+  }
+
+  @Test(
+    arguments: [
+      [:],
+      ["CalendropGoogleClientID": ""],
+      ["CalendropGoogleClientID": "   "],
+      ["CalendropGoogleClientID": "cid"],
+      ["CalendropGoogleClientID": "cid", "CalendropGoogleClientSecret": " \n"],
+      ["CalendropGoogleClientSecret": "sec"],
+    ] as [[String: String]])
+  func reportsABuildWithoutAClient(info: [String: String]) {
+    #expect(OAuthClient(infoDictionary: info) == nil)
+  }
+
+  @Test(arguments: [
+    ("invalid_grant", true),
+    ("unauthorized_client", false),
+    ("invalid_client", false),
+    ("invalid_request", false),
+  ])
+  func tellsWhichTokenErrorsNeedTheUserToSignInAgain(code: String, expected: Bool) throws {
+    let response = try JSONDecoder().decode(TokenErrorResponse.self, from: Data(#"{"error":"\#(code)"}"#.utf8))
+    #expect(response.requiresSignIn == expected)
+  }
+
   @Test func pkceChallengeMatchesRFC7636Example() {
     // Appendix B of RFC 7636.
     let verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
