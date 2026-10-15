@@ -8,6 +8,8 @@ between the user's Macs.
 - Signing in happens in the default browser; nothing has to be configured
   first. Calendrop asks only to see the account's list of calendars and their
   events. A sign-in that leaves either out is turned back with an explanation.
+- A sign-in left unfinished in the browser can be cancelled, and starting
+  another one replaces it.
 - Each account has a label and a colour that the menu, the cut-in and settings
   show in place of its address.
 - Meetings come from the calendars the user chose for each account. Until the

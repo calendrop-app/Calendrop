@@ -29,12 +29,17 @@ struct AccountsPage: View {
           Label(model.isRefreshing ? "Refreshing…" : "Refresh Now", systemImage: "arrow.clockwise")
         }
         .disabled(model.isRefreshing || model.config.accounts.isEmpty)
-        Button {
-          Task { await model.signIn(hint: nil) }
-        } label: {
-          Label(model.isSigningIn ? "Waiting for the sign-in to finish…" : "Add Account…", systemImage: "plus")
+        if model.isSigningIn {
+          Text("Waiting for the sign-in to finish in the browser…")
+            .foregroundStyle(.secondary)
+          Button("Cancel Sign-In") { model.cancelSignIn() }
+        } else {
+          Button {
+            model.signIn(hint: nil)
+          } label: {
+            Label("Add Account…", systemImage: "plus")
+          }
         }
-        .disabled(model.isSigningIn)
       }
     }
     .sheet(item: $editing) { edited in
@@ -165,8 +170,7 @@ private struct AccountGroup: View {
         SettingsRow(
           "Sign-in", description: status(state), descriptionColor: state == .needsSignIn ? .orange : .red
         ) {
-          Button("Sign In…") { Task { await model.signIn(hint: account.email) } }
-            .disabled(model.isSigningIn)
+          Button("Sign In…") { model.signIn(hint: account.email) }
         }
       }
     }

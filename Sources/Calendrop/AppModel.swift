@@ -15,6 +15,7 @@ final class AppModel: ObservableObject {
   @Published private(set) var calendars: [String: [CalendarRef]] = [:]
   @Published private(set) var accountStates: [String: AccountState] = [:]
   @Published private(set) var isSigningIn = false
+  private var signInTask: Task<Void, Never>?
   @Published var lastError: String?
 
   let store: any ConfigStorage
@@ -87,16 +88,35 @@ final class AppModel: ObservableObject {
 
   // MARK: Accounts
 
-  func signIn(hint: String?) async {
+  /// Starts a sign-in, replacing one still waiting on the browser: a sign-in
+  /// abandoned there never reports back.
+  func signIn(hint: String?) {
+    signInTask?.cancel()
     isSigningIn = true
-    defer { isSigningIn = false }
+    signInTask = Task { await completeSignIn(hint: hint) }
+  }
+
+  func cancelSignIn() {
+    signInTask?.cancel()
+    signInTask = nil
+    isSigningIn = false
+  }
+
+  /// A cancelled sign-in has been replaced or given up, so it leaves the state alone.
+  private func completeSignIn(hint: String?) async {
     do {
       let email = try await source.signIn(hint: hint, existing: config.accounts.map(\.email))
+      guard !Task.isCancelled else { return }
+      signInTask = nil
+      isSigningIn = false
       updateConfig { $0.addAccount(email) }
       accountStates[email] = .ok
       lastError = nil
       await refresh()
     } catch {
+      guard !Task.isCancelled else { return }
+      signInTask = nil
+      isSigningIn = false
       lastError = error.localizedDescription
     }
   }

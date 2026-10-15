@@ -146,6 +146,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   }
 
   func signIn(hint: String?) {
-    Task { await model.signIn(hint: hint) }
+    model.signIn(hint: hint)
   }
 }

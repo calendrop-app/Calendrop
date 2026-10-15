@@ -61,6 +61,8 @@ enum LoopbackAuthenticator {
         continue
       }
     }
+    // The stream also ends when the waiting task is cancelled.
+    try Task.checkCancellation()
     throw AuthError.timedOut
   }
 
