@@ -40,7 +40,11 @@ final class AppModel: ObservableObject {
     }
   }
 
-  var policy: CutinPolicy { CutinPolicy(leadTime: TimeInterval(max(0, config.leadMinutes) * 60)) }
+  var policy: CutinPolicy {
+    CutinPolicy(
+      leadTime: TimeInterval(max(0, config.leadMinutes) * 60),
+      includesMeetingsWithoutJoinLink: config.cutInWithoutJoinLink)
+  }
 
   var needsAttention: Bool {
     if isDemo { return false }

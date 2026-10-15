@@ -6,14 +6,15 @@ import Testing
 private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
 
 private func meeting(
-  _ uid: String, startsIn minutes: Double, lasting duration: Double = 30, account: String = "a@example.com"
+  _ uid: String, startsIn minutes: Double, lasting duration: Double = 30, account: String = "a@example.com",
+  joins: Bool = true
 ) -> Meeting {
   Meeting(
     uid: uid,
     title: uid,
     start: t0.addingTimeInterval(minutes * 60),
     end: t0.addingTimeInterval((minutes + duration) * 60),
-    joinURL: nil,
+    joinURL: joins ? URL(string: "https://meet.google.com/aaa-bbbb-ccc") : nil,
     htmlLink: nil,
     account: account,
     calendarName: "cal"
@@ -22,6 +23,17 @@ private func meeting(
 
 @Suite struct CutinPolicyTests {
   let policy = CutinPolicy(leadTime: 2 * 60, grace: 5 * 60)
+
+  @Test func skipsMeetingsWithoutAJoinLinkUnlessAsked() {
+    let inPerson = meeting("in-person", startsIn: 1, joins: false)
+    #expect(policy.meetingsToCutIn([inPerson], now: t0, acknowledged: []).isEmpty)
+    #expect(
+      policy.cutInGroup([inPerson, meeting("online", startsIn: 1)], now: t0, acknowledged: []).map(\.uid) == ["online"])
+
+    var asked = policy
+    asked.includesMeetingsWithoutJoinLink = true
+    #expect(asked.meetingsToCutIn([inPerson], now: t0, acknowledged: []).map(\.uid) == ["in-person"])
+  }
 
   @Test func doesNotTriggerBeforeLeadTime() {
     #expect(policy.meetingsToCutIn([meeting("a", startsIn: 2.1)], now: t0, acknowledged: []).isEmpty)
@@ -153,7 +165,7 @@ private func meeting(
   }
 
   @Test func keepsTheCopyThatHasAJoinURL() {
-    let plain = meeting("shared", startsIn: 10, account: "a@example.com")
+    let plain = meeting("shared", startsIn: 10, account: "a@example.com", joins: false)
     var withURL = meeting("shared", startsIn: 10, account: "b@example.com")
     withURL.joinURL = URL(string: "https://meet.google.com/x")
     #expect(Meeting.merge([[plain], [withURL]]).first?.account == "b@example.com")

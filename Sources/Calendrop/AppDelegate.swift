@@ -14,7 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     statusBar = StatusBarController(model: model, actions: self)
-    presenter.onJoin = { [weak self] meeting in self?.join(meeting) }
+    presenter.onJoin = { [weak self] meeting in self?.answerCutin(meeting) }
     presenter.onDismiss = { [weak self] in self?.dismissCutin() }
 
     schedule(every: 1) { $0.tick() }
@@ -60,6 +60,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   }
 
   // MARK: StatusBarActions
+
+  /// The cut-in's button: joins the meeting, or for one with nothing to join only
+  /// acknowledges it, rather than sending the user to the calendar.
+  private func answerCutin(_ meeting: Meeting) {
+    if meeting.joinURL != nil {
+      join(meeting)
+    } else {
+      model.acknowledge(model.policy.settledByJoining(meeting, among: presenter.meetings))
+      presenter.hide()
+    }
+  }
 
   func join(_ meeting: Meeting) {
     model.acknowledge(model.policy.settledByJoining(meeting, among: presenter.meetings + [meeting]))

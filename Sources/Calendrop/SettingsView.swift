@@ -93,6 +93,15 @@ private struct GeneralPage: View {
         }
         .fixedSize()
       }
+      SettingsRow(
+        "Meetings without a video link",
+        description:
+          "Also cut in for meetings with nothing to join, such as in-person ones. Their cut-in closes with OK."
+      ) {
+        Toggle("", isOn: binding(\.cutInWithoutJoinLink))
+          .toggleStyle(.switch)
+          .labelsHidden()
+      }
     }
   }
 

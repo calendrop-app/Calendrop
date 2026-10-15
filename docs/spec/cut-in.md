@@ -12,7 +12,9 @@ Calendrop interrupts the user before each meeting by covering every screen.
   dismissed — from the cut-in or the menu — does not cut in again, also after a
   relaunch.
 
-Declined events, all-day events and cancelled events never cut in.
+Declined events, all-day events and cancelled events never cut in. Meetings
+without a video link, such as in-person ones, cut in only when the user turned
+that on in settings.
 
 ## Meetings close together
 
@@ -44,8 +46,9 @@ meetings.
 
 Only by the user:
 
-- **Join** opens the meeting's video link in the default browser, or the event
-  page when the meeting has no link. With a single meeting, Return triggers it.
+- **Join** opens the meeting's video link in the default browser. A meeting
+  without a link offers **OK** instead, which only closes the cut-in. With a
+  single meeting, Return triggers either.
 - **Dismiss** is a small control that must be pressed and held. It settles
   every meeting on the cut-in.
 

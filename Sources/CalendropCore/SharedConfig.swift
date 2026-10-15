@@ -9,6 +9,7 @@ import Foundation
 public struct SharedConfig: Codable, Equatable, Sendable {
   public var accounts: [String] = []
   public var leadMinutes: Int = 2
+  public var cutInWithoutJoinLink = false
   public var appearance = CutinAppearance()
 
   public init() {}
@@ -18,6 +19,8 @@ public struct SharedConfig: Codable, Equatable, Sendable {
     let defaults = SharedConfig()
     accounts = try c.decodeIfPresent([String].self, forKey: .accounts) ?? defaults.accounts
     leadMinutes = try c.decodeIfPresent(Int.self, forKey: .leadMinutes) ?? defaults.leadMinutes
+    cutInWithoutJoinLink =
+      try c.decodeIfPresent(Bool.self, forKey: .cutInWithoutJoinLink) ?? defaults.cutInWithoutJoinLink
     appearance = (try? c.decodeIfPresent(CutinAppearance.self, forKey: .appearance)) ?? defaults.appearance
   }
 

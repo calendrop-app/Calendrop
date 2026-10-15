@@ -29,6 +29,7 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 | --- | --- | --- | --- |
 | `accounts` | array of strings | `[]` | Email addresses of the accounts to read, in lower case |
 | `leadMinutes` | integer | `2` | Minutes before the start that the cut-in appears |
+| `cutInWithoutJoinLink` | boolean | `false` | Whether meetings without a video link cut in too |
 | `appearance` | object | the Midnight preset | How the cut-in looks; see below |
 
 `appearance` holds:

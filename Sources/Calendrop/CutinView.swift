@@ -230,8 +230,8 @@ private struct JoinButton: View {
       onJoin(meeting)
     } label: {
       Label(
-        meeting.joinURL == nil ? "Open Event" : "Join",
-        systemImage: meeting.joinURL == nil ? "calendar" : "video.fill"
+        meeting.joinURL == nil ? "OK" : "Join",
+        systemImage: meeting.joinURL == nil ? "checkmark" : "video.fill"
       )
       .font(.system(size: large ? 26 : 20, weight: .bold))
       .padding(.horizontal, large ? 56 : 30)

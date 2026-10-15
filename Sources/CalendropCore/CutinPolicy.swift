@@ -10,11 +10,21 @@ public struct CutinPolicy: Sendable {
   /// Meetings starting within this distance of a due meeting share its cut-in, so
   /// the user sees the conflict at once instead of one interruption after another.
   public var nearby: TimeInterval
+  /// Whether a meeting with nothing to join, such as an in-person one, cuts in too.
+  public var includesMeetingsWithoutJoinLink: Bool
 
-  public init(leadTime: TimeInterval, grace: TimeInterval = 5 * 60, nearby: TimeInterval = 15 * 60) {
+  public init(
+    leadTime: TimeInterval, grace: TimeInterval = 5 * 60, nearby: TimeInterval = 15 * 60,
+    includesMeetingsWithoutJoinLink: Bool = false
+  ) {
     self.leadTime = leadTime
     self.grace = grace
     self.nearby = nearby
+    self.includesMeetingsWithoutJoinLink = includesMeetingsWithoutJoinLink
+  }
+
+  private func mayCutIn(_ meeting: Meeting) -> Bool {
+    includesMeetingsWithoutJoinLink || meeting.joinURL != nil
   }
 
   /// Everything one cut-in shows: every due meeting, plus every meeting that starts
@@ -26,7 +36,8 @@ public struct CutinPolicy: Sendable {
     return
       meetings
       .filter { m in
-        guard !acknowledged.contains(m.acknowledgementKey), m.end > now, m.start.addingTimeInterval(grace) > now
+        guard mayCutIn(m), !acknowledged.contains(m.acknowledgementKey), m.end > now,
+          m.start.addingTimeInterval(grace) > now
         else { return false }
         return dueKeys.contains(m.acknowledgementKey) || abs(m.start.timeIntervalSince(anchor.start)) <= nearby
           || m.overlaps(anchor)
@@ -45,7 +56,7 @@ public struct CutinPolicy: Sendable {
       .filter { m in
         let opens = m.start.addingTimeInterval(-leadTime)
         let closes = min(m.end, m.start.addingTimeInterval(grace))
-        return opens <= now && now < closes && !acknowledged.contains(m.acknowledgementKey)
+        return mayCutIn(m) && opens <= now && now < closes && !acknowledged.contains(m.acknowledgementKey)
       }
       .sorted { $0.start < $1.start }
   }

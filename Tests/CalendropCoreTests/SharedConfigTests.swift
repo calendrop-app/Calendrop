@@ -33,6 +33,14 @@ import Testing
     #expect(config.leadMinutes == 2)
   }
 
+  @Test func cutsInOnlyForMeetingsWithAJoinLinkByDefault() throws {
+    #expect(SharedConfig().cutInWithoutJoinLink == false)
+    var config = SharedConfig()
+    config.cutInWithoutJoinLink = true
+    let decoded = try JSONDecoder().decode(SharedConfig.self, from: JSONEncoder().encode(config))
+    #expect(decoded.cutInWithoutJoinLink)
+  }
+
   @Test func neverStoresTokensOrClientCredentials() throws {
     let encoded = String(decoding: try JSONEncoder().encode(SharedConfig()), as: UTF8.self).lowercased()
     #expect(!encoded.contains("token"))

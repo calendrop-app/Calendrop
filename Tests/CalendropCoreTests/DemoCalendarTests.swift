@@ -5,7 +5,7 @@ import Testing
 
 @Suite struct DemoCalendarTests {
   let now = Date(timeIntervalSince1970: 1_800_000_000)
-  let policy = CutinPolicy(leadTime: 2 * 60)
+  let policy = CutinPolicy(leadTime: 2 * 60, includesMeetingsWithoutJoinLink: true)
 
   private var schedule: [Meeting] { DemoCalendar.meetings(now: now) }
 

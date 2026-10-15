@@ -11,12 +11,14 @@ public enum DemoCalendar {
     case single
     case simultaneous
     case closeTogether
+    case withoutLink
 
     public var title: String {
       switch self {
       case .single: "Single Meeting"
       case .simultaneous: "Meetings at the Same Time"
       case .closeTogether: "Meetings Close Together"
+      case .withoutLink: "Meeting Without a Video Link"
       }
     }
 
@@ -36,6 +38,8 @@ public enum DemoCalendar {
             Entry("check-in", "Quick check-in", start, 4, accounts[0]),
             Entry("design-review", "デザインレビュー（モバイルアプリ リニューアル）", start.addingTimeInterval(5 * minute), 30, accounts[1]),
           ]
+        case .withoutLink:
+          [Entry("room-meeting", "Planning in Room 3A", start, 30, accounts[0], joins: false)]
         }
       // A fresh UID per run, so a scenario tried again is never already acknowledged.
       let run = Int(now.timeIntervalSince1970)
