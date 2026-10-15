@@ -63,6 +63,8 @@ Only by the user:
 - **Dismiss** is a small control that must be pressed and held. It settles
   every meeting on the cut-in. It sits in the corner that stays on screen even
   if a change of resolution went unnoticed, so the cut-in can always be closed.
+- **Emergency key**: pressing Control, Option, Command and Escape together
+  dismisses it the same way, for when the on-screen controls cannot be reached.
 
-Escape and closing shortcuts do nothing. A cut-in that has appeared stays even
+Escape alone and closing shortcuts do nothing. A cut-in that has appeared stays even
 after the meeting is well under way.

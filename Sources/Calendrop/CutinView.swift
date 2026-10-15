@@ -393,6 +393,9 @@ private struct HoldToDismissButton: View {
       Text("Hold to dismiss")
         .font(.system(size: 10))
         .foregroundStyle(palette.text.opacity(0.4))
+      Text("or press \(EmergencyKey.symbol)")
+        .font(.system(size: 10))
+        .foregroundStyle(palette.text.opacity(0.4))
     }
     .contentShape(Rectangle())
     .onLongPressGesture(

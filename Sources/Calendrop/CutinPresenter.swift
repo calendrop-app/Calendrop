@@ -23,10 +23,23 @@ final class CutinPresenter {
   var dropsIn = true
   private var windows: [NSWindow] = []
   private var observers: [NSObjectProtocol] = []
+  private var keyMonitor: Any?
 
   var isShowing: Bool { !meetings.isEmpty }
 
   init() {
+    keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+      let keyCode = event.keyCode
+      let modifiers = EmergencyKey.Modifiers(rawValue: event.modifierFlags.rawValue)
+      let dismissed = MainActor.assumeIsolated { () -> Bool in
+        guard let self, self.isShowing, EmergencyKey.matches(keyCode: keyCode, modifiers: modifiers) else {
+          return false
+        }
+        self.onDismiss?()
+        return true
+      }
+      return dismissed ? nil : event
+    }
     observers.append(
       NotificationCenter.default.addObserver(
         forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
@@ -109,7 +122,8 @@ final class CutinPresenter {
 private final class CutinWindow: NSWindow {
   override var canBecomeKey: Bool { true }
   override var canBecomeMain: Bool { true }
-  // Escape and ⌘W must not close the cut-in; only the on-screen controls do.
+  // Escape and ⌘W must not close the cut-in; only the on-screen controls and the
+  // emergency key combination do.
   override func cancelOperation(_ sender: Any?) {}
   override func performClose(_ sender: Any?) {}
 }
