@@ -29,10 +29,10 @@ just install   # build Calendrop.app and copy it into /Applications
 just demo
 ```
 
-launches Calendrop with `--demo`: it runs on sample meetings, and the first cut-in
-appears about 20 seconds later. Nothing is read from or written to Google, the
-shared configuration or the Keychain. Choose **Restart Demo Schedule** in the
-menu to watch the cut-ins again.
+launches Calendrop with `--demo`: the menu fills with sample meetings, and
+**Try Cut-in** in the menu shows a single meeting, meetings at the same time, or
+meetings close together. Nothing is read from or written to Google, the shared
+configuration or the Keychain.
 
 ## Set up Google access
 

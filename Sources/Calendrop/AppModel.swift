@@ -111,7 +111,7 @@ final class AppModel: ObservableObject {
   func refresh() async {
     if isDemo {
       // The periodic refresh must not shift the schedule the user is watching.
-      if meetings.isEmpty { restartDemo() }
+      if meetings.isEmpty { meetings = DemoCalendar.meetings(now: Date()) }
       return
     }
     guard !isRefreshing else { return }
@@ -147,11 +147,18 @@ final class AppModel: ObservableObject {
     accountStates = states.filter { current.contains($0.key) }
   }
 
-  /// Lays the sample schedule out again from now, so the cut-ins can be watched again.
-  func restartDemo() {
+  /// Replaces any earlier scenario with `scenario`, due at once.
+  func tryDemo(_ scenario: DemoCalendar.Scenario) {
     guard isDemo else { return }
-    demoAcknowledged = []
-    meetings = DemoCalendar.meetings(now: Date(), leadTime: policy.leadTime)
+    meetings = Meeting.merge([
+      meetings.filter { !DemoCalendar.isScenario($0) },
+      scenario.meetings(now: Date(), leadTime: policy.leadTime),
+    ])
+  }
+
+  /// The meetings allowed to cut in. In demo mode only scenarios the user asked for do.
+  var cutInCandidates: [Meeting] {
+    isDemo ? meetings.filter(DemoCalendar.isScenario) : meetings
   }
 
   // MARK: Acknowledgements

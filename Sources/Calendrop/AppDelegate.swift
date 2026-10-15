@@ -42,7 +42,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   private func tick() {
     let now = Date()
     statusBar?.updateTitle(now: now)
-    let group = model.policy.cutInGroup(model.meetings, now: now, acknowledged: model.acknowledged)
+    let group = model.policy.cutInGroup(model.cutInCandidates, now: now, acknowledged: model.acknowledged)
     // Once shown, the cut-in stays until the user acts, even past the grace period;
     // newly gathered meetings join the ones already on screen.
     let shownIDs = Set(presenter.meetings.map(\.id))
@@ -75,9 +75,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     }
   }
 
-  func restartDemo() {
+  func tryDemo(_ scenario: DemoCalendar.Scenario) {
     presenter.hide()
-    model.restartDemo()
+    model.tryDemo(scenario)
     tick()
   }
 
