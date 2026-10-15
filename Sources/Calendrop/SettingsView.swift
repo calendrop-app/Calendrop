@@ -109,6 +109,14 @@ private struct GeneralPage: View {
           .toggleStyle(.switch)
           .labelsHidden()
       }
+      SettingsRow(
+        "Meetings not yet accepted",
+        description: "Also cut in for meetings you answered Maybe to or have not answered."
+      ) {
+        Toggle("", isOn: binding(\.cutInWithoutAcceptance))
+          .toggleStyle(.switch)
+          .labelsHidden()
+      }
     }
   }
 

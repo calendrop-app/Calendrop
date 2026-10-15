@@ -37,6 +37,7 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 | `accounts` | array of objects | `[]` | The accounts to read; see below |
 | `leadMinutes` | integer | `2` | Minutes before the start that the cut-in appears, from 0 to 120; values outside are clamped |
 | `cutInWithoutJoinLink` | boolean | `false` | Whether meetings without a video link cut in too |
+| `cutInWithoutAcceptance` | boolean | `true` | Whether meetings answered "maybe" to, or not answered, cut in too |
 | `appearance` | object | the Midnight preset | How the cut-in looks; see below |
 
 `accounts` holds one object per account:

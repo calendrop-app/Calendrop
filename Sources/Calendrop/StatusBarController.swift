@@ -118,10 +118,15 @@ final class StatusBarController: NSObject, NSMenuDelegate {
       title: "\(time)  \(Countdown.truncate(meeting.title, to: 48))", action: nil, keyEquivalent: "")
     let account = model.config.account(meeting.account)
     let colour = account.map { NSColor($0.color) } ?? .secondaryLabelColor
-    // The symbol says whether there is something to join; its colour, whose meeting it is.
-    item.image = symbol(meeting.joinURL != nil ? (ongoing ? "video.fill" : "video") : "calendar", colour: colour)
+    // The symbol says whether there is something to join; its fill, whether the user
+    // accepted; its colour, whose meeting it is. That a meeting is under way is the
+    // item's state mark.
+    let shape = meeting.joinURL != nil ? "video" : "calendar.circle"
+    item.image = symbol(meeting.response == .accepted ? "\(shape).fill" : shape, colour: colour)
     if #available(macOS 14.4, *) {
-      item.subtitle = "\(account?.displayName ?? meeting.account) · \(meeting.calendarName)"
+      item.subtitle =
+        ([meeting.response.label, account?.displayName ?? meeting.account, meeting.calendarName] as [String?])
+        .compactMap { $0 }.joined(separator: " · ")
     }
     item.state = ongoing ? .mixed : .off
     item.submenu = detailMenu(for: meeting, accountName: account?.displayName ?? meeting.account, colour: colour)
@@ -163,6 +168,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     let owner = detail("\(accountName) · \(meeting.calendarName)", symbol: "circle.fill")
     owner.image = symbol("circle.fill", colour: colour)
     menu.addItem(owner)
+    if let response = meeting.response.label {
+      menu.addItem(detail(response, symbol: "questionmark.circle"))
+    }
     if let location = meeting.location {
       menu.addItem(detail(location, symbol: "mappin.and.ellipse"))
     }

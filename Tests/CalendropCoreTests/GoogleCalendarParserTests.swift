@@ -70,6 +70,22 @@ import Testing
     #expect(meetings.map(\.uid) == ["ok"])
   }
 
+  @Test func readsTheUsersResponse() throws {
+    let meetings = try parse(
+      """
+      {"items":[
+        {"id":"accepted","start":{"dateTime":"2026-10-16T01:00:00Z"},"end":{"dateTime":"2026-10-16T02:00:00Z"},
+         "attendees":[{"email":"me@example.com","self":true,"responseStatus":"accepted"}]},
+        {"id":"tentative","start":{"dateTime":"2026-10-16T01:00:00Z"},"end":{"dateTime":"2026-10-16T02:00:00Z"},
+         "attendees":[{"email":"me@example.com","self":true,"responseStatus":"tentative"}]},
+        {"id":"unanswered","start":{"dateTime":"2026-10-16T01:00:00Z"},"end":{"dateTime":"2026-10-16T02:00:00Z"},
+         "attendees":[{"email":"me@example.com","self":true,"responseStatus":"needsAction"},{"email":"x@example.com","responseStatus":"accepted"}]},
+        {"id":"own","start":{"dateTime":"2026-10-16T01:00:00Z"},"end":{"dateTime":"2026-10-16T02:00:00Z"}}
+      ]}
+      """)
+    #expect(meetings.map(\.response) == [.accepted, .tentative, .unanswered, .accepted])
+  }
+
   @Test func extractsJoinURLFromConferenceDataAndDescription() throws {
     let meetings = try parse(
       """

@@ -12,10 +12,11 @@ public struct SharedConfig: Codable, Equatable, Sendable {
   /// Beyond two hours a cut-in would interrupt long before it is useful.
   public static let leadMinutesRange = 0...120
   public var cutInWithoutJoinLink = false
+  public var cutInWithoutAcceptance = true
   public var appearance = CutinAppearance()
 
   private enum CodingKeys: String, CodingKey {
-    case accounts, leadMinutes, cutInWithoutJoinLink, appearance
+    case accounts, leadMinutes, cutInWithoutJoinLink, cutInWithoutAcceptance, appearance
   }
 
   public init() {}
@@ -27,6 +28,8 @@ public struct SharedConfig: Codable, Equatable, Sendable {
     setLeadMinutes(try c.decodeIfPresent(Int.self, forKey: .leadMinutes) ?? defaults.leadMinutes)
     cutInWithoutJoinLink =
       try c.decodeIfPresent(Bool.self, forKey: .cutInWithoutJoinLink) ?? defaults.cutInWithoutJoinLink
+    cutInWithoutAcceptance =
+      try c.decodeIfPresent(Bool.self, forKey: .cutInWithoutAcceptance) ?? defaults.cutInWithoutAcceptance
     appearance = (try? c.decodeIfPresent(CutinAppearance.self, forKey: .appearance)) ?? defaults.appearance
   }
 

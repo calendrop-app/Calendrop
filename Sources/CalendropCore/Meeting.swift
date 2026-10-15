@@ -18,11 +18,30 @@ public struct Meeting: Identifiable, Hashable, Sendable {
   public var organizer: String?
   /// Everyone else invited who has not declined, by name where Google has one.
   public var attendees: [String]
+  /// How the user answered the invitation; a meeting nobody invited them to is accepted.
+  public var response: Response
+
+  /// Ordered from the least to the most committed. A declined meeting is never shown,
+  /// so it has no case.
+  public enum Response: Int, Comparable, Sendable {
+    case unanswered, tentative, accepted
+
+    public static func < (a: Response, b: Response) -> Bool { a.rawValue < b.rawValue }
+
+    /// What marks a meeting not yet accepted; nil for an accepted one, which needs no mark.
+    public var label: String? {
+      switch self {
+      case .accepted: nil
+      case .tentative: "Maybe"
+      case .unanswered: "Not answered"
+      }
+    }
+  }
 
   public init(
     uid: String, title: String, start: Date, end: Date, joinURL: URL?, htmlLink: URL?, account: String,
     calendarID: String = "", calendarName: String, location: String? = nil, notes: String? = nil,
-    organizer: String? = nil, attendees: [String] = []
+    organizer: String? = nil, attendees: [String] = [], response: Response = .accepted
   ) {
     self.uid = uid
     self.title = title
@@ -37,6 +56,7 @@ public struct Meeting: Identifiable, Hashable, Sendable {
     self.notes = notes
     self.organizer = organizer
     self.attendees = attendees
+    self.response = response
   }
 
   public var id: String { acknowledgementKey }
@@ -87,14 +107,18 @@ public struct Meeting: Identifiable, Hashable, Sendable {
   /// Combines the meetings of several accounts into one start-ordered list.
   ///
   /// An event the user was invited to from more than one account appears once. The
-  /// copy that carries a join URL wins; otherwise the first account's copy does.
+  /// copy that carries a join URL wins; otherwise the first account's copy does. It
+  /// keeps the firmest response any account gave, since accepting from one account
+  /// is attending.
   public static func merge(_ lists: [[Meeting]]) -> [Meeting] {
     var byKey: [String: Meeting] = [:]
     var order: [String] = []
     for meeting in lists.joined() {
       let key = meeting.acknowledgementKey
       if let existing = byKey[key] {
-        if existing.joinURL == nil, meeting.joinURL != nil { byKey[key] = meeting }
+        var kept = existing.joinURL == nil && meeting.joinURL != nil ? meeting : existing
+        kept.response = max(existing.response, meeting.response)
+        byKey[key] = kept
       } else {
         byKey[key] = meeting
         order.append(key)

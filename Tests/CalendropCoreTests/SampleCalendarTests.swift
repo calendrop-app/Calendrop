@@ -19,6 +19,7 @@ import Testing
   @Test func scheduleCoversWhatTheMenuShows() {
     #expect(schedule.contains { $0.start < now && $0.end > now })
     #expect(schedule.contains { $0.joinURL == nil })
+    #expect(Set(schedule.map(\.response)) == [.accepted, .tentative, .unanswered])
     #expect(schedule.contains { !Calendar.current.isDate($0.start, inSameDayAs: now) })
     #expect(Set(schedule.map(\.account)) == Set(SampleCalendar.accounts))
   }

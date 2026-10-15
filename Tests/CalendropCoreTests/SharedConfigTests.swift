@@ -42,6 +42,16 @@ import Testing
     #expect(decoded.cutInWithoutJoinLink)
   }
 
+  @Test func cutsInForMeetingsNotYetAcceptedByDefault() throws {
+    #expect(SharedConfig().cutInWithoutAcceptance)
+    let older = try JSONDecoder().decode(SharedConfig.self, from: Data("{}".utf8))
+    #expect(older.cutInWithoutAcceptance)
+    var config = SharedConfig()
+    config.cutInWithoutAcceptance = false
+    let decoded = try JSONDecoder().decode(SharedConfig.self, from: JSONEncoder().encode(config))
+    #expect(!decoded.cutInWithoutAcceptance)
+  }
+
   @Test func neverStoresTokensOrClientCredentials() throws {
     let encoded = String(decoding: try JSONEncoder().encode(SharedConfig()), as: UTF8.self).lowercased()
     #expect(!encoded.contains("token"))

@@ -12,19 +12,23 @@ public struct CutinPolicy: Sendable {
   public var nearby: TimeInterval
   /// Whether a meeting with nothing to join, such as an in-person one, cuts in too.
   public var includesMeetingsWithoutJoinLink: Bool
+  /// Whether a meeting the user answered "maybe" to, or has not answered, cuts in too.
+  public var includesMeetingsNotAccepted: Bool
 
   public init(
     leadTime: TimeInterval, grace: TimeInterval = 5 * 60, nearby: TimeInterval = 15 * 60,
-    includesMeetingsWithoutJoinLink: Bool = false
+    includesMeetingsWithoutJoinLink: Bool = false, includesMeetingsNotAccepted: Bool = true
   ) {
     self.leadTime = leadTime
     self.grace = grace
     self.nearby = nearby
     self.includesMeetingsWithoutJoinLink = includesMeetingsWithoutJoinLink
+    self.includesMeetingsNotAccepted = includesMeetingsNotAccepted
   }
 
   private func mayCutIn(_ meeting: Meeting) -> Bool {
-    includesMeetingsWithoutJoinLink || meeting.joinURL != nil
+    (includesMeetingsWithoutJoinLink || meeting.joinURL != nil)
+      && (includesMeetingsNotAccepted || meeting.response == .accepted)
   }
 
   /// Everything one cut-in shows: every due meeting, plus every meeting that starts

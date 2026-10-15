@@ -114,7 +114,7 @@ public enum SampleCalendar {
         Entry("standup", "Daily standup", at(30), 15, account, "work").with(
           notes: "Yesterday, today, blockers. Keep it under 15 minutes.", organizer: "Mika Tanaka",
           attendees: ["Mika Tanaka", "Ken Sato", "Aki Mori", "Lee Chen"]),
-        Entry("apollo-sync", "Apollo sync", at(90), 30, account, "apollo"),
+        Entry("apollo-sync", "Apollo sync", at(90), 30, account, "apollo", response: .tentative),
         Entry("planning", "Sprint planning", at(150), 60, account, "work").with(
           location: "Room 3A / online",
           notes: "1. Review last sprint\n2. Pick stories for the next one\nBoard: https://example.com/sample/board",
@@ -127,7 +127,7 @@ public enum SampleCalendar {
           location: "Cafe Komorebi, 2F", attendees: ["Aki Mori"]),
         Entry("school", "School pickup", at(240), 30, account, "family", joins: false),
         Entry("birthday", "Mom's birthday call", at(360), 30, account, "birthdays"),
-        Entry("customer", "Customer call", at(24 * 60), 30, account, "personal"),
+        Entry("customer", "Customer call", at(24 * 60), 30, account, "personal", response: .unanswered),
       ]
     default:
       return [
@@ -157,10 +157,11 @@ public enum SampleCalendar {
     var notes: String?
     var organizer: String?
     var attendees: [String] = []
+    var response: Meeting.Response
 
     init(
       _ slug: String, _ title: String, _ start: Date, _ minutes: Double, _ account: String, _ calendar: String,
-      joins: Bool = true
+      joins: Bool = true, response: Meeting.Response = .accepted
     ) {
       self.slug = slug
       self.title = title
@@ -169,6 +170,7 @@ public enum SampleCalendar {
       self.account = account
       self.calendar = calendar
       self.joins = joins
+      self.response = response
     }
 
     func with(
@@ -197,7 +199,8 @@ public enum SampleCalendar {
         location: location,
         notes: notes,
         organizer: organizer,
-        attendees: attendees
+        attendees: attendees,
+        response: response
       )
     }
   }

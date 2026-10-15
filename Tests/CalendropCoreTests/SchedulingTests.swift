@@ -35,6 +35,21 @@ private func meeting(
     #expect(asked.meetingsToCutIn([inPerson], now: t0, acknowledged: []).map(\.uid) == ["in-person"])
   }
 
+  @Test func cutsInForTentativeAndUnansweredMeetingsUnlessTurnedOff() {
+    var tentative = meeting("tentative", startsIn: 1)
+    tentative.response = .tentative
+    var unanswered = meeting("unanswered", startsIn: 1)
+    unanswered.response = .unanswered
+    let accepted = meeting("accepted", startsIn: 1)
+    let all = [tentative, unanswered, accepted]
+    #expect(policy.meetingsToCutIn(all, now: t0, acknowledged: []).count == 3)
+
+    var acceptedOnly = policy
+    acceptedOnly.includesMeetingsNotAccepted = false
+    #expect(acceptedOnly.meetingsToCutIn(all, now: t0, acknowledged: []).map(\.uid) == ["accepted"])
+    #expect(acceptedOnly.cutInGroup(all, now: t0, acknowledged: []).map(\.uid) == ["accepted"])
+  }
+
   @Test func doesNotTriggerBeforeLeadTime() {
     #expect(policy.meetingsToCutIn([meeting("a", startsIn: 2.1)], now: t0, acknowledged: []).isEmpty)
   }
@@ -169,6 +184,17 @@ private func meeting(
     var withURL = meeting("shared", startsIn: 10, account: "b@example.com")
     withURL.joinURL = URL(string: "https://meet.google.com/x")
     #expect(Meeting.merge([[plain], [withURL]]).first?.account == "b@example.com")
+  }
+
+  @Test func keepsTheFirmestResponseAcrossAccounts() {
+    var unanswered = meeting("shared", startsIn: 10, account: "a@example.com")
+    unanswered.response = .unanswered
+    var tentative = meeting("shared", startsIn: 10, account: "b@example.com")
+    tentative.response = .tentative
+    let accepted = meeting("shared", startsIn: 10, account: "c@example.com")
+    #expect(Meeting.merge([[unanswered], [tentative]]).first?.response == .tentative)
+    #expect(Meeting.merge([[unanswered], [tentative], [accepted]]).first?.response == .accepted)
+    #expect(Meeting.merge([[accepted], [unanswered]]).first?.response == .accepted)
   }
 }
 

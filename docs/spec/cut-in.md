@@ -14,7 +14,10 @@ Calendrop interrupts the user before each meeting by covering every screen.
 
 Declined events, all-day events and cancelled events never cut in. Meetings
 without a video link, such as in-person ones, cut in only when the user turned
-that on in settings.
+that on in settings. Meetings the user answered "maybe" to or has not answered
+cut in unless the user turned that off, and are marked as such on the cut-in
+and in the menu. An event seen through several accounts counts as accepted
+when any of them accepted it.
 
 ## Meetings close together
 

@@ -27,8 +27,12 @@ public enum GoogleCalendarParser {
         let start = event.start.dateTime.flatMap(parseDate),
         let end = event.end.dateTime.flatMap(parseDate)
       else { return nil }
-      if event.attendees?.contains(where: { $0.isSelf == true && $0.responseStatus == "declined" }) == true {
-        return nil
+      let response: Meeting.Response
+      switch event.attendees?.first(where: { $0.isSelf == true })?.responseStatus {
+      case "declined": return nil
+      case "tentative": response = .tentative
+      case "needsAction": response = .unanswered
+      default: response = .accepted
       }
       let videoEntryPoints = (event.conferenceData?.entryPoints ?? [])
         .filter { $0.entryPointType == "video" }
@@ -52,7 +56,8 @@ public enum GoogleCalendarParser {
         organizer: event.organizer.flatMap { $0.isSelf == true ? nil : nonEmpty($0.displayName ?? $0.email ?? "") },
         attendees: (event.attendees ?? [])
           .filter { $0.isSelf != true && $0.resource != true && $0.responseStatus != "declined" }
-          .compactMap { nonEmpty($0.displayName ?? $0.email ?? "") }
+          .compactMap { nonEmpty($0.displayName ?? $0.email ?? "") },
+        response: response
       )
     }
   }

@@ -99,3 +99,15 @@ import Testing
     #expect(summary(names) == expected)
   }
 }
+
+@Suite struct ResponseLabelTests {
+  @Test(
+    arguments: [
+      (Meeting.Response.accepted, nil),
+      (.tentative, "Maybe"),
+      (.unanswered, "Not answered"),
+    ] as [(Meeting.Response, String?)])
+  func marksOnlyMeetingsNotAccepted(response: Meeting.Response, expected: String?) {
+    #expect(response.label == expected)
+  }
+}

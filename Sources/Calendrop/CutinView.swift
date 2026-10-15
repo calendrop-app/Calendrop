@@ -137,6 +137,22 @@ private struct AccountBadge: View {
   }
 }
 
+/// Marks a meeting the user has not accepted, so a "maybe" never passes for a yes.
+private struct ResponseBadge: View {
+  let meeting: Meeting
+  @Environment(\.cutinPalette) private var palette
+
+  var body: some View {
+    if let label = meeting.response.label {
+      Text(label)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 2)
+        .background(Capsule().stroke(palette.text.opacity(0.5)))
+        .foregroundStyle(palette.text.opacity(0.8))
+    }
+  }
+}
+
 private struct CutinAccountsKey: EnvironmentKey {
   static let defaultValue: [AccountSettings] = []
 }
@@ -206,6 +222,7 @@ private struct SingleMeetingView: View {
           Text(CutinStyle.timeRange(meeting))
             .foregroundStyle(palette.text.opacity(0.6))
           AccountBadge(meeting: meeting)
+          ResponseBadge(meeting: meeting)
         }
         .font(.system(size: 18))
         MeetingDetails(meeting: meeting, noteLines: 4, alignment: .center)
@@ -292,6 +309,7 @@ private struct MeetingRow: View {
           .lineLimit(2)
         HStack(spacing: 8) {
           AccountBadge(meeting: meeting)
+          ResponseBadge(meeting: meeting)
           if overlapping {
             Text("Overlaps")
               .padding(.horizontal, 8)
