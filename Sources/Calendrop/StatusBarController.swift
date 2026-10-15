@@ -5,8 +5,6 @@ import CalendropCore
 protocol StatusBarActions: AnyObject {
   func join(_ meeting: Meeting)
   func refreshNow()
-  func tryDemo(_ scenario: DemoCalendar.Scenario)
-  func previewCutin()
   func openSettings()
   func signIn(hint: String?)
 }
@@ -54,15 +52,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
       banner.image = NSImage(systemSymbolName: "theatermasks", accessibilityDescription: nil)
       banner.isEnabled = false
       menu.addItem(banner)
-      let tryItem = NSMenuItem(title: "Try Cut-in", action: nil, keyEquivalent: "")
-      let scenarios = NSMenu()
-      for scenario in DemoCalendar.Scenario.allCases {
-        let item = action(scenario.title, #selector(tryDemo(_:)))
-        item.representedObject = scenario.rawValue
-        scenarios.addItem(item)
-      }
-      tryItem.submenu = scenarios
-      menu.addItem(tryItem)
       menu.addItem(.separator())
     } else if model.oauthClient == nil {
       let missing = NSMenuItem(title: "Google sign-in is not built in", action: nil, keyEquivalent: "")
@@ -102,7 +91,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     menu.addItem(.separator())
     if !model.isDemo {
       menu.addItem(action("Refresh Now", #selector(refreshNow), key: "r"))
-      menu.addItem(action("Preview Cut-in", #selector(previewCutin)))
     }
     menu.addItem(action("Settings…", #selector(openSettings), key: ","))
     menu.addItem(.separator())
@@ -168,12 +156,5 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
   @objc private func addAccount() { actions?.signIn(hint: nil) }
   @objc private func refreshNow() { actions?.refreshNow() }
-  @objc private func tryDemo(_ sender: NSMenuItem) {
-    guard let raw = sender.representedObject as? String, let scenario = DemoCalendar.Scenario(rawValue: raw) else {
-      return
-    }
-    actions?.tryDemo(scenario)
-  }
-  @objc private func previewCutin() { actions?.previewCutin() }
   @objc private func openSettings() { actions?.openSettings() }
 }

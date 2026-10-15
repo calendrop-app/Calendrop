@@ -16,10 +16,6 @@ import Testing
     return policy.cutInGroup(meetings, now: time ?? now, acknowledged: acknowledged)
   }
 
-  @Test func scheduleNeverCutsInByItself() {
-    #expect(!schedule.contains(where: DemoCalendar.isScenario))
-  }
-
   @Test func scheduleCoversWhatTheMenuShows() {
     #expect(schedule.contains { $0.start < now && $0.end > now })
     #expect(schedule.contains { $0.joinURL == nil })
@@ -29,8 +25,6 @@ import Testing
 
   @Test(arguments: DemoCalendar.Scenario.allCases)
   func scenarioIsDueTheMomentItIsAdded(scenario: DemoCalendar.Scenario) {
-    let meetings = scenario.meetings(now: now, leadTime: policy.leadTime)
-    #expect(meetings.allSatisfy(DemoCalendar.isScenario))
     #expect(!group(scenario).isEmpty)
   }
 

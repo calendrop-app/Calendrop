@@ -82,31 +82,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     presenter.show(scenario.meetings(now: Date(), leadTime: model.policy.leadTime))
   }
 
-  func tryDemo(_ scenario: DemoCalendar.Scenario) {
-    presenter.hide()
-    model.tryDemo(scenario)
-    tick()
-  }
-
-  /// Shows a copy of the next meeting under a throwaway UID, so ending the preview
-  /// never acknowledges the real meeting and its cut-in still fires.
-  func previewCutin() {
-    let now = Date()
-    let lead = TimeInterval(max(1, model.config.leadMinutes) * 60)
-    let next = model.policy.nextMeeting(in: model.meetings, now: now)
-    let sample = Meeting(
-      uid: "preview-\(UUID().uuidString)",
-      title: next?.title ?? "Preview meeting",
-      start: now.addingTimeInterval(lead),
-      end: now.addingTimeInterval(lead + 1800),
-      joinURL: next?.joinURL,
-      htmlLink: next?.htmlLink ?? URL(string: "https://calendar.google.com/"),
-      account: next?.account ?? model.config.accounts.first ?? "preview@example.com",
-      calendarName: "Preview"
-    )
-    presenter.show([sample])
-  }
-
   func openSettings() {
     if settingsWindow == nil {
       let window = NSWindow(

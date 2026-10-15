@@ -30,9 +30,9 @@ just demo
 ```
 
 launches Calendrop with `--demo`: the menu fills with sample meetings, and
-**Try Cut-in** in the menu shows a single meeting, meetings at the same time, or
-meetings close together. Nothing is read from or written to Google, the shared
-configuration or the Keychain.
+**Settings → Appearance → Try Full Screen** shows the cut-in with a single
+meeting, meetings at the same time, or meetings close together. Nothing is
+read from or written to Google, the shared configuration or the Keychain.
 
 ## Add Google accounts
 

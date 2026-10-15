@@ -149,18 +149,10 @@ final class AppModel: ObservableObject {
     accountStates = states.filter { current.contains($0.key) }
   }
 
-  /// Replaces any earlier scenario with `scenario`, due at once.
-  func tryDemo(_ scenario: DemoCalendar.Scenario) {
-    guard isDemo else { return }
-    meetings = Meeting.merge([
-      meetings.filter { !DemoCalendar.isScenario($0) },
-      scenario.meetings(now: Date(), leadTime: policy.leadTime),
-    ])
-  }
-
-  /// The meetings allowed to cut in. In demo mode only scenarios the user asked for do.
+  /// The meetings allowed to cut in. The demo schedule only fills the menu; cut-ins
+  /// are tried from the appearance settings instead.
   var cutInCandidates: [Meeting] {
-    isDemo ? meetings.filter(DemoCalendar.isScenario) : meetings
+    isDemo ? [] : meetings
   }
 
   // MARK: Acknowledgements

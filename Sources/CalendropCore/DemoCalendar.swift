@@ -2,8 +2,8 @@ import Foundation
 
 /// Sample meetings for demo mode.
 ///
-/// The schedule only fills the menu. Cut-ins come from scenarios the user picks,
-/// laid out so they are due the moment they are added.
+/// The schedule only fills the menu and never cuts in. Scenarios are the meetings
+/// the appearance settings show full screen, laid out so they are due at once.
 public enum DemoCalendar {
   public static let accounts = ["work@example.com", "personal@example.com"]
 
@@ -41,10 +41,6 @@ public enum DemoCalendar {
       let run = Int(now.timeIntervalSince1970)
       return Meeting.merge([entries.map { $0.meeting(uidPrefix: "\(scenarioPrefix)\(rawValue)-\(run)-") }])
     }
-  }
-
-  public static func isScenario(_ meeting: Meeting) -> Bool {
-    meeting.uid.hasPrefix(scenarioPrefix)
   }
 
   public static func meetings(now: Date) -> [Meeting] {
