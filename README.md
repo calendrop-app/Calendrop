@@ -19,7 +19,13 @@ or deliberately dismiss it.
 
 ## Install
 
-Requires macOS 14+ and Swift 6 from Xcode or the Command Line Tools.
+Requires macOS 14+ on Apple silicon. Download `Calendrop-<version>-macos-arm64.zip`
+from [Releases](https://github.com/calendrop-app/Calendrop/releases), unzip it
+and move Calendrop.app into /Applications. The app is self-signed, not
+notarized, so the first launch has to be allowed in System Settings › Privacy
+& Security.
+
+To build it yourself instead, with Swift 6 from Xcode or the Command Line Tools:
 
 ```sh
 just install   # build Calendrop.app and copy it into /Applications
@@ -92,6 +98,13 @@ Without it, builds are signed ad-hoc.
 Either way, macOS asks for Keychain access once more after each rebuild or
 update, even when it was always allowed: without an Apple team ID in the
 signature, it ties that answer to the build itself.
+
+## Release
+
+Set the version in `Resources/Info.plist`, commit it as `release: vX.Y.Z`, then
+publish a GitHub release tagged `vX.Y.Z`. The Release workflow builds the app
+from the tag, signed by "Calendrop Release" and with the Google OAuth client
+from the environment "release", and attaches the zip to the release.
 
 ## Development
 

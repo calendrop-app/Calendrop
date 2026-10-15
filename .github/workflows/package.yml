@@ -1,0 +1,72 @@
+name: Package
+
+# Makes the release zip of Calendrop.app from the checked-out commit and keeps
+# it as the workflow artifact "package", for the caller to use or discard.
+#
+# Run on its own, it proves the app still bundles: on every commit to main,
+# and on a pull request only when it touches what the bundle depends on beyond
+# the Swift sources, which ci.yml already builds.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - Resources/**
+      - Package.swift
+      - justfile
+      - .github/**
+  workflow_call:
+    inputs:
+      # Signs the app by the release identity and embeds the Google OAuth
+      # client, both kept in the secrets of the environment "release"; ad-hoc
+      # and with sample accounts otherwise.
+      sign:
+        type: boolean
+        default: false
+
+# As in ci.yml: a pull request only needs its latest commit packaged, and runs
+# on main queue. A release is never cancelled. Called by a workflow, this
+# reads the caller's event and ref.
+concurrency:
+  group: package-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    environment: ${{ inputs.sign && 'release' || '' }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      # A release ships the version Info.plist states; a tag naming another
+      # would publish a zip whose name and app disagree with it.
+      - name: Check the tag against the app's version
+        if: inputs.sign
+        run: |
+          version="$(plutil -extract CFBundleShortVersionString raw Resources/Info.plist)"
+          if [[ "v$version" != "$GITHUB_REF_NAME" ]]; then
+            echo "the tag $GITHUB_REF_NAME does not match the app's version $version" >&2
+            exit 1
+          fi
+      # Outside Nix, whose shell the package needs only these from; Swift comes
+      # from the runner's Xcode.
+      - run: brew install just librsvg
+      - name: Import the release signing identity
+        if: inputs.sign
+        run: .github/import-identity.sh "$RUNNER_TEMP/signing.keychain-db"
+        env:
+          CALENDROP_SIGNING_P12: ${{ secrets.CALENDROP_SIGNING_P12 }}
+          CALENDROP_SIGNING_PASSWORD: ${{ secrets.CALENDROP_SIGNING_PASSWORD }}
+      - run: just package
+        env:
+          CALENDROP_GOOGLE_CLIENT_ID: ${{ inputs.sign && secrets.CALENDROP_GOOGLE_CLIENT_ID || '' }}
+          CALENDROP_GOOGLE_CLIENT_SECRET: ${{ inputs.sign && secrets.CALENDROP_GOOGLE_CLIENT_SECRET || '' }}
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: package
+          path: build/package/*.zip
+          if-no-files-found: error

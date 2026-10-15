@@ -79,6 +79,13 @@ bundle:
       codesign --force --sign - {{ bundle }}; \
     fi
 
+# Zip the bundle into build/package for a release. ditto keeps the signature
+# intact; the name says the CPU, as a zip does not.
+package: bundle
+    mkdir -p build/package
+    version="$(plutil -extract CFBundleShortVersionString raw Resources/Info.plist)"; \
+    ditto -c -k --keepParent {{ bundle }} "build/package/{{ app_name }}-$version-macos-$(uname -m).zip"
+
 # Build the bundle and launch it.
 run: bundle
     open {{ bundle }}
