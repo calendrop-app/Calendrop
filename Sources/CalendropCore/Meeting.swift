@@ -32,7 +32,23 @@ public struct Meeting: Identifiable, Hashable, Sendable {
   public var acknowledgementKey: String { "\(uid)|\(Int(start.timeIntervalSince1970))" }
 
   /// The URL a "join" action opens: the conference link, or the event page when there is none.
-  public var openURL: URL? { joinURL ?? htmlLink }
+  ///
+  /// Google links carry the event's account as `authuser`, so a browser signed in to
+  /// several Google accounts opens them as the right one instead of its default.
+  public var openURL: URL? {
+    guard let url = joinURL ?? htmlLink else { return nil }
+    guard Self.googleHosts.contains(url.host ?? ""),
+      var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+    else { return url }
+    var items = (components.queryItems ?? []).filter { $0.name != "authuser" }
+    items.append(URLQueryItem(name: "authuser", value: account))
+    components.queryItems = items
+    // URLComponents leaves "+" alone, but Google decodes it as a space.
+    components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+    return components.url ?? url
+  }
+
+  private static let googleHosts: Set<String> = ["meet.google.com", "calendar.google.com", "www.google.com"]
 
   public func overlaps(_ other: Meeting) -> Bool {
     start < other.end && other.start < end

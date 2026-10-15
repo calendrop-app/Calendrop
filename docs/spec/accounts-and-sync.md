@@ -9,6 +9,8 @@ between the user's Macs.
   read-only calendar access and the account's email address.
 - Meetings come from the calendars the user has selected in Google Calendar.
 - An event visible through several accounts is shown once.
+- Google Meet links and Google Calendar event pages open as the account the
+  meeting came from, even when the browser defaults to another Google account.
 - An account whose grant is missing or revoked is shown as needing sign-in;
   its meetings disappear until it is signed in again. When the network is
   unavailable, the meetings last fetched are kept.
