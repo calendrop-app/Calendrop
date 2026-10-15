@@ -9,6 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   private var statusBar: StatusBarController?
   private var settingsWindow: NSWindow?
   private var timers: [Timer] = []
+  /// Whether the cut-in on screen is a trial from the appearance settings.
+  private var showingTrial = false
 
   private static let refreshInterval: TimeInterval = 3 * 60
 
@@ -54,6 +56,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     statusBar?.updateTitle(now: now)
     presenter.theme = model.config.appearance.theme
     presenter.accounts = model.config.accounts
+    // A trial shows sample meetings only; real ones wait until it is closed.
+    guard !showingTrial else {
+      presenter.syncWithScreens(force: false)
+      return
+    }
     let group = model.policy.cutInGroup(model.meetings, now: now, acknowledged: model.acknowledged)
     // Once shown, the cut-in stays until the user acts, even past the grace period;
     // newly gathered meetings join the ones already on screen.
@@ -66,7 +73,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   }
 
   private func dismissCutin() {
-    model.acknowledge(presenter.meetings)
+    if !showingTrial { model.acknowledge(presenter.meetings) }
+    closeCutin()
+  }
+
+  private func closeCutin() {
+    showingTrial = false
     presenter.hide()
   }
 
@@ -75,17 +87,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   /// The cut-in's button: joins the meeting, or for one with nothing to join only
   /// acknowledges it, rather than sending the user to the calendar.
   private func answerCutin(_ meeting: Meeting) {
-    if meeting.joinURL != nil {
+    if showingTrial {
+      // Nothing on a trial is a real meeting, so nothing is acknowledged.
+      closeCutin()
+      if meeting.joinURL != nil, let url = meeting.openURL { NSWorkspace.shared.open(url) }
+    } else if meeting.joinURL != nil {
       join(meeting)
     } else {
-      model.acknowledge(model.policy.settledByJoining(meeting, among: presenter.meetings))
-      presenter.hide()
+      model.acknowledge(model.policy.settledByJoining(meeting, among: model.meetings + presenter.meetings))
+      closeCutin()
     }
   }
 
   func join(_ meeting: Meeting) {
-    model.acknowledge(model.policy.settledByJoining(meeting, among: presenter.meetings + [meeting]))
-    presenter.hide()
+    model.acknowledge(model.policy.settledByJoining(meeting, among: model.meetings + presenter.meetings + [meeting]))
+    closeCutin()
     if let url = meeting.openURL {
       NSWorkspace.shared.open(url)
     }
@@ -100,6 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
 
   /// Shows a scenario at once, for judging the cut-in's look; nothing it shows is a real meeting.
   func tryCutin(_ scenario: SampleCalendar.Scenario) {
+    showingTrial = true
     presenter.theme = model.config.appearance.theme
     presenter.accounts = model.config.accounts
     presenter.show(scenario.meetings(now: Date(), leadTime: model.policy.leadTime))
