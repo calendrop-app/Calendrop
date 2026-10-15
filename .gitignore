@@ -1,0 +1,10 @@
+/.envrc
+.direnv/
+result
+/.claude/worktrees/
+
+/.build/
+/build/
+/.swiftpm/
+*.xcodeproj
+.DS_Store
