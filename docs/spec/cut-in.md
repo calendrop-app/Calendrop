@@ -47,7 +47,7 @@ for a display change does not replay the entrance.
 The user picks one of the preset styles or a custom one with their own
 background, text and button colours and font. Settings preview the style live
 and can show it full screen with sample meetings, which never count as real
-meetings.
+meetings. A real meeting that comes due during such a trial replaces it.
 
 ## How it ends
 

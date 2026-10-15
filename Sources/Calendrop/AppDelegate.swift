@@ -57,12 +57,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     presenter.theme = model.config.appearance.theme
     presenter.dropsIn = model.config.appearance.dropsIn
     presenter.accounts = model.config.accounts
-    // A trial shows sample meetings only; real ones wait until it is closed.
-    guard !showingTrial else {
-      presenter.syncWithScreens(force: false)
-      return
-    }
     let group = model.policy.cutInGroup(model.meetings, now: now, acknowledged: model.acknowledged)
+    // A trial never mixes in real meetings, and never holds one back: a real
+    // meeting coming due ends the trial, acknowledging none of its samples.
+    if showingTrial {
+      guard !group.isEmpty else {
+        presenter.syncWithScreens(force: false)
+        return
+      }
+      closeCutin()
+    }
     // Once shown, the cut-in stays until the user acts, even past the grace period;
     // newly gathered meetings join the ones already on screen.
     let shownIDs = Set(presenter.meetings.map(\.id))
