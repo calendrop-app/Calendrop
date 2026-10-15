@@ -30,8 +30,9 @@ struct AppearancePage: View {
         Picker("", selection: $previewScenario) {
           ForEach(SampleCalendar.Scenario.allCases, id: \.self) { Text($0.title).tag($0) }
         }
-        .pickerStyle(.segmented)
+        .pickerStyle(.menu)
         .labelsHidden()
+        .fixedSize()
         CutinMiniature(
           meetings: previewScenario.meetings(now: Date(), leadTime: 90),
           theme: appearance.theme,

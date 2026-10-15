@@ -63,6 +63,26 @@ import Testing
     #expect(!group(scenario).isEmpty)
   }
 
+  @Test func everydaySamplesAreInEnglish() {
+    let everyday = SampleCalendar.Scenario.allCases.filter { $0 != .manyScripts }
+      .flatMap { $0.meetings(now: now, leadTime: 0) }
+    for meeting in schedule + everyday {
+      #expect(meeting.title.unicodeScalars.allSatisfy { $0.isASCII }, "\(meeting.title)")
+    }
+  }
+
+  @Test func manyScriptsCoversEachWritingSystem() {
+    let titles = SampleCalendar.Scenario.manyScripts.meetings(now: now, leadTime: 0).map(\.title)
+    let scripts: [(String, ClosedRange<UInt32>)] = [
+      ("Hiragana", 0x3040...0x309F), ("Hangul", 0xAC00...0xD7AF), ("Han", 0x4E00...0x9FFF),
+      ("Arabic", 0x0600...0x06FF), ("Thai", 0x0E00...0x0E7F), ("Devanagari", 0x0900...0x097F),
+      ("Emoji", 0x1F300...0x1FAFF),
+    ]
+    for (name, range) in scripts {
+      #expect(titles.contains { $0.unicodeScalars.contains { range.contains($0.value) } }, "\(name)")
+    }
+  }
+
   @Test func singleShowsOneMeeting() {
     #expect(group(.single).count == 1)
   }

@@ -16,6 +16,7 @@ public enum SampleCalendar {
     case simultaneous
     case closeTogether
     case withoutLink
+    case manyScripts
 
     public var title: String {
       switch self {
@@ -23,6 +24,7 @@ public enum SampleCalendar {
       case .simultaneous: "Meetings at the Same Time"
       case .closeTogether: "Meetings Close Together"
       case .withoutLink: "Meeting Without a Video Link"
+      case .manyScripts: "Titles in Many Scripts"
       }
     }
 
@@ -41,13 +43,13 @@ public enum SampleCalendar {
         case .simultaneous:
           [
             Entry("product-review", "Product review", start, 60, work, "work"),
-            Entry("interview", "採用面接（エンジニア）", start, 30, personal, "personal"),
+            Entry("interview", "Hiring interview (engineering)", start, 30, personal, "personal"),
           ]
         case .closeTogether:
           [
             Entry("check-in", "Quick check-in", start, 4, work, "work"),
             Entry(
-              "design-review", "デザインレビュー（モバイルアプリ リニューアル）", start.addingTimeInterval(5 * minute), 30,
+              "design-review", "Design review (mobile app redesign)", start.addingTimeInterval(5 * minute), 30,
               personal, "personal"),
           ]
         case .withoutLink:
@@ -55,6 +57,21 @@ public enum SampleCalendar {
             Entry("room-meeting", "Planning in Room 3A", start, 30, work, "work", joins: false).with(
               location: "Room 3A, 4th floor", notes: "Bring the printed roadmap.", attendees: ["Ken Sato", "Aki Mori"])
           ]
+        case .manyScripts:
+          // Long titles in scripts that break in different ways: CJK glyph choice,
+          // Hangul syllables, right-to-left text, combining marks and composed emoji.
+          [
+            ("ja", "デザインレビュー（モバイルアプリ リニューアル）と次四半期の計画", work),
+            ("ko", "모바일 앱 리뉴얼 디자인 리뷰 및 다음 분기 계획 회의", personal),
+            ("zh-hans", "移动应用改版设计评审与下季度规划会议", work),
+            ("zh-hant", "行動應用程式改版設計審查與下一季規劃會議", personal),
+            ("ar", "مراجعة تصميم تطبيق الجوال وخطة الربع القادم", work),
+            ("th", "ประชุมทบทวนการออกแบบแอปมือถือและวางแผนไตรมาสหน้า", personal),
+            ("hi", "मोबाइल ऐप डिज़ाइन समीक्षा और अगली तिमाही की योजना", work),
+            ("emoji", "👨‍👩‍👧‍👦 Family sync 🇯🇵🇰🇷🇨🇳🇹🇼 🏳️‍🌈 👍🏽", personal),
+          ].map { slug, title, account in
+            Entry("scripts-\(slug)", title, start, 30, account, account == work ? "work" : "personal")
+          }
         }
       // A fresh UID per run, so a scenario tried again is never already acknowledged.
       let run = Int(now.timeIntervalSince1970)

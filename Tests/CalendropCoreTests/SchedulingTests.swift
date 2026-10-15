@@ -202,4 +202,22 @@ private func meeting(
     #expect(Countdown.truncate("週次定例ミーティング", to: 4) == "週次定例…")
     #expect(Countdown.truncate("short", to: 10) == "short")
   }
+
+  @Test(arguments: [
+    "모바일 앱 리뉴얼 디자인 리뷰",
+    "\u{1100}\u{1161}\u{11A8}\u{1100}\u{1161}\u{11A8}\u{1100}\u{1161}\u{11A8}\u{1100}\u{1161}\u{11A8}",
+    "移动应用改版设计评审",
+    "行動應用程式改版設計審查",
+    "مراجعة تصميم تطبيق الجوال",
+    "ประชุมทบทวนการออกแบบแอป",
+    "नमस्ते दुनिया की बैठक",
+    "👨‍👩‍👧‍👦👨‍👩‍👧‍👦🇯🇵🇰🇷🏳️‍🌈👍🏽",
+  ])
+  func neverCutsACharacterApartInAnyScript(title: String) {
+    let truncated = Countdown.truncate(title, to: 3)
+    let kept = Array(truncated.dropLast())
+    #expect(truncated.hasSuffix("…"))
+    #expect(kept.count == 3)
+    #expect(Array(title).starts(with: kept))
+  }
 }
