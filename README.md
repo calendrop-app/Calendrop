@@ -4,6 +4,10 @@ A macOS menu bar app that shows your next Google Calendar meeting and, shortly
 before it starts, **cuts in**: it covers every screen until you join the meeting
 or deliberately dismiss it.
 
+[Website](https://calendrop-app.github.io/) ·
+[Privacy Policy](https://calendrop-app.github.io/privacy/) ·
+[Terms of Service](https://calendrop-app.github.io/terms/)
+
 - Several Google accounts at once; an event you were invited to from more than
   one account appears once.
 - The menu bar shows the next meeting and a countdown (`Weekly sync · in 12m`).
@@ -19,7 +23,13 @@ or deliberately dismiss it.
 
 ## Install
 
-Requires macOS 14+ on Apple silicon. Download `Calendrop-<version>-macos-arm64.zip`
+Requires macOS 14+ on Apple silicon. With [Homebrew](https://brew.sh/):
+
+```sh
+brew install --cask calendrop-app/tap/calendrop
+```
+
+Or download `Calendrop-<version>-macos-arm64.zip`
 from [Releases](https://github.com/calendrop-app/Calendrop/releases), unzip it
 and move Calendrop.app into /Applications. The app is self-signed, not
 notarized, so the first launch has to be allowed in System Settings › Privacy
@@ -104,7 +114,11 @@ signature, it ties that answer to the build itself.
 Set the version in `Resources/Info.plist`, commit it as `release: vX.Y.Z`, then
 publish a GitHub release tagged `vX.Y.Z`. The Release workflow builds the app
 from the tag, signed by "Calendrop Release" and with the Google OAuth client
-from the environment "release", and attaches the zip to the release.
+from the environment "release", and attaches the zip to the release. It then
+has [the site](https://calendrop-app.github.io/) rebuilt and the
+[Homebrew cask](https://github.com/calendrop-app/homebrew-tap) rewritten for the
+release, through the tokens in the secrets `SITE_DISPATCH_TOKEN` and
+`HOMEBREW_TAP_DISPATCH_TOKEN`.
 
 ## Development
 
