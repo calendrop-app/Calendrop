@@ -8,7 +8,9 @@ import Foundation
 /// sends its address to Google as `login_hint`.
 public struct SharedConfig: Codable, Equatable, Sendable {
   public var accounts: [AccountSettings] = []
-  public var leadMinutes: Int = 2
+  public private(set) var leadMinutes: Int = 2
+  /// Beyond two hours a cut-in would interrupt long before it is useful.
+  public static let leadMinutesRange = 0...120
   public var cutInWithoutJoinLink = false
   public var appearance = CutinAppearance()
 
@@ -22,7 +24,7 @@ public struct SharedConfig: Codable, Equatable, Sendable {
     let c = try decoder.container(keyedBy: CodingKeys.self)
     let defaults = SharedConfig()
     accounts = (try? Self.decodeAccounts(from: c)) ?? defaults.accounts
-    leadMinutes = try c.decodeIfPresent(Int.self, forKey: .leadMinutes) ?? defaults.leadMinutes
+    setLeadMinutes(try c.decodeIfPresent(Int.self, forKey: .leadMinutes) ?? defaults.leadMinutes)
     cutInWithoutJoinLink =
       try c.decodeIfPresent(Bool.self, forKey: .cutInWithoutJoinLink) ?? defaults.cutInWithoutJoinLink
     appearance = (try? c.decodeIfPresent(CutinAppearance.self, forKey: .appearance)) ?? defaults.appearance
@@ -66,6 +68,10 @@ public struct SharedConfig: Codable, Equatable, Sendable {
 
   private struct Skipped: Decodable {
     init(from decoder: Decoder) throws {}
+  }
+
+  public mutating func setLeadMinutes(_ minutes: Int) {
+    leadMinutes = min(max(minutes, Self.leadMinutesRange.lowerBound), Self.leadMinutesRange.upperBound)
   }
 
   public func account(_ email: String) -> AccountSettings? {

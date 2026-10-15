@@ -21,7 +21,7 @@ import Testing
     var config = SharedConfig()
     config.addAccount("a@example.com")
     config.addAccount("b@example.com")
-    config.leadMinutes = 5
+    config.setLeadMinutes(5)
     try store.save(config)
     #expect(store.load() == config)
   }
@@ -79,5 +79,19 @@ import Testing
     try store.save(config)
     #expect(store.load() == config)
     #expect(MemoryConfigStore().load() == SharedConfig())
+  }
+}
+
+@Suite struct LeadMinutesTests {
+  @Test(arguments: [(-5, 0), (0, 0), (7, 7), (120, 120), (500, 120)] as [(Int, Int)])
+  func clampsTypedLeadTimes(typed: Int, stored: Int) {
+    var config = SharedConfig()
+    config.setLeadMinutes(typed)
+    #expect(config.leadMinutes == stored)
+  }
+
+  @Test func clampsAHandEditedFile() throws {
+    let config = try JSONDecoder().decode(SharedConfig.self, from: Data(#"{"leadMinutes":-3}"#.utf8))
+    #expect(config.leadMinutes == 0)
   }
 }

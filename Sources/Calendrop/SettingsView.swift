@@ -82,13 +82,23 @@ private struct GeneralPage: View {
         reset: model.config.leadMinutes == SharedConfig().leadMinutes
           ? nil
           : ResetLink(label: minutes(SharedConfig().leadMinutes)) {
-            model.updateConfig { $0.leadMinutes = SharedConfig().leadMinutes }
+            model.updateConfig { $0.setLeadMinutes(SharedConfig().leadMinutes) }
           }
       ) {
-        Stepper(value: binding(\.leadMinutes), in: 0...30) {
-          Text(minutes(model.config.leadMinutes)).monospacedDigit()
+        let lead = Binding(
+          get: { model.config.leadMinutes },
+          set: { v in model.updateConfig { $0.setLeadMinutes(v) } })
+        HStack(spacing: 6) {
+          TextField("", value: lead, format: .number)
+            .multilineTextAlignment(.trailing)
+            .monospacedDigit()
+            .frame(width: 48)
+          Stepper("", value: lead, in: SharedConfig.leadMinutesRange)
+            .labelsHidden()
+          Text(model.config.leadMinutes == 1 ? "minute" : "minutes")
+            .foregroundStyle(.secondary)
         }
-        .fixedSize()
+        .help("0 shows the cut-in when the meeting starts.")
       }
       SettingsRow(
         "Meetings without a video link",
