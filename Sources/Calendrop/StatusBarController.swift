@@ -4,7 +4,6 @@ import CalendropCore
 @MainActor
 protocol StatusBarActions: AnyObject {
   func join(_ meeting: Meeting)
-  func refreshNow()
   func openSettings()
   func signIn(hint: String?)
 }
@@ -85,7 +84,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     addMeetings(to: menu, now: now)
 
     menu.addItem(.separator())
-    menu.addItem(action("Refresh Now", #selector(refreshNow), key: "r"))
     menu.addItem(action("Settings…", #selector(openSettings), key: ","))
     menu.addItem(.separator())
     menu.addItem(
@@ -230,6 +228,5 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   }
 
   @objc private func addAccount() { actions?.signIn(hint: nil) }
-  @objc private func refreshNow() { actions?.refreshNow() }
   @objc private func openSettings() { actions?.openSettings() }
 }

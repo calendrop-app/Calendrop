@@ -19,7 +19,7 @@ final class AppModel: ObservableObject {
 
   let store: any ConfigStorage
   private let source: CalendarSource
-  private var isRefreshing = false
+  @Published private(set) var isRefreshing = false
   private var refreshAgain = false
   /// Each account's meetings as last fetched, before merging, so an offline refresh can
   /// re-apply a changed calendar choice without losing copies merged away.

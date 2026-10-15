@@ -22,12 +22,20 @@ struct AccountsPage: View {
         AccountSummaryRow(model: model, account: account) { editing = EditedAccount(email: account.email) }
       }
     } footer: {
-      Button {
-        Task { await model.signIn(hint: nil) }
-      } label: {
-        Label(model.isSigningIn ? "Waiting for the sign-in to finish…" : "Add Account…", systemImage: "plus")
+      HStack(spacing: 8) {
+        Button {
+          Task { await model.refresh() }
+        } label: {
+          Label(model.isRefreshing ? "Refreshing…" : "Refresh Now", systemImage: "arrow.clockwise")
+        }
+        .disabled(model.isRefreshing || model.config.accounts.isEmpty)
+        Button {
+          Task { await model.signIn(hint: nil) }
+        } label: {
+          Label(model.isSigningIn ? "Waiting for the sign-in to finish…" : "Add Account…", systemImage: "plus")
+        }
+        .disabled(model.isSigningIn)
       }
-      .disabled(model.isSigningIn)
     }
     .sheet(item: $editing) { edited in
       AccountSheet(model: model, email: edited.email) { editing = nil }
