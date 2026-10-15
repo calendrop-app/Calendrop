@@ -1,0 +1,140 @@
+import CalendropCore
+import Foundation
+
+@MainActor
+final class AppModel: ObservableObject {
+  enum AccountState: Equatable {
+    case ok
+    case needsSignIn
+    case error(String)
+  }
+
+  @Published private(set) var config: SharedConfig
+  @Published private(set) var meetings: [Meeting] = []
+  @Published private(set) var accountStates: [String: AccountState] = [:]
+  @Published private(set) var isSigningIn = false
+  @Published var lastError: String?
+
+  let store: ConfigStore
+  private let service = GoogleCalendarService()
+  private var isRefreshing = false
+  private static let acknowledgedKey = "acknowledgedMeetings"
+
+  init(store: ConfigStore = ConfigStore(url: ConfigStore.defaultURL())) {
+    self.store = store
+    self.config = store.load()
+  }
+
+  var policy: CutinPolicy { CutinPolicy(leadTime: TimeInterval(max(0, config.leadMinutes) * 60)) }
+
+  var needsAttention: Bool {
+    config.oauthClient == nil || config.accounts.isEmpty || accountStates.values.contains { $0 != .ok }
+  }
+
+  func state(of account: String) -> AccountState {
+    accountStates[account] ?? (Keychain.refreshToken(for: account) == nil ? .needsSignIn : .ok)
+  }
+
+  // MARK: Shared config
+
+  func updateConfig(_ mutate: (inout SharedConfig) -> Void) {
+    var next = config
+    mutate(&next)
+    guard next != config else { return }
+    config = next
+    do {
+      try store.save(next)
+    } catch {
+      lastError = "Could not save \(store.url.path): \(error.localizedDescription)"
+    }
+  }
+
+  /// Picks up edits another Mac made through iCloud Drive.
+  private func reloadConfigFromDisk() {
+    let onDisk = store.load()
+    if onDisk != config { config = onDisk }
+  }
+
+  // MARK: Accounts
+
+  func signIn(hint: String?) async {
+    guard let client = config.oauthClient else {
+      lastError = "Set the Google OAuth client ID first."
+      return
+    }
+    isSigningIn = true
+    defer { isSigningIn = false }
+    do {
+      let (email, refreshToken) = try await LoopbackAuthenticator.authorize(client: client, loginHint: hint)
+      try Keychain.setRefreshToken(refreshToken, for: email)
+      service.forget(account: email)
+      updateConfig { $0.addAccount(email) }
+      accountStates[email] = .ok
+      lastError = nil
+      await refresh()
+    } catch {
+      lastError = error.localizedDescription
+    }
+  }
+
+  /// Removes the account from every Mac (through the shared config) and drops this Mac's token.
+  func remove(account: String) {
+    Keychain.deleteRefreshToken(for: account)
+    service.forget(account: account)
+    accountStates[account] = nil
+    updateConfig { $0.removeAccount(account) }
+    meetings.removeAll { $0.account == account }
+  }
+
+  // MARK: Meetings
+
+  func refresh() async {
+    guard !isRefreshing else { return }
+    isRefreshing = true
+    defer { isRefreshing = false }
+
+    reloadConfigFromDisk()
+    guard let client = config.oauthClient else {
+      meetings = []
+      return
+    }
+    let calendar = Calendar.current
+    let from = calendar.startOfDay(for: Date())
+    let to = calendar.date(byAdding: .day, value: 2, to: from)!
+
+    var lists: [[Meeting]] = []
+    var states: [String: AccountState] = [:]
+    for account in config.accounts {
+      do {
+        lists.append(try await service.meetings(account: account, client: client, from: from, to: to))
+        states[account] = .ok
+      } catch CalendarError.needsSignIn {
+        states[account] = .needsSignIn
+      } catch {
+        // Keep what we already know so cut-ins still fire while offline.
+        lists.append(meetings.filter { $0.account == account })
+        states[account] = .error(error.localizedDescription)
+      }
+    }
+    // An account removed while its fetch was in flight must not come back.
+    let current = Set(config.accounts)
+    meetings = Meeting.merge(lists.map { $0.filter { current.contains($0.account) } })
+    accountStates = states.filter { current.contains($0.key) }
+  }
+
+  // MARK: Acknowledgements
+
+  /// Meeting occurrences the user has joined or dismissed, persisted so a relaunch
+  /// does not interrupt again.
+  var acknowledged: Set<String> {
+    Set((UserDefaults.standard.dictionary(forKey: Self.acknowledgedKey) ?? [:]).keys)
+  }
+
+  func acknowledge(_ meetings: [Meeting]) {
+    var stored = UserDefaults.standard.dictionary(forKey: Self.acknowledgedKey) as? [String: Double] ?? [:]
+    for m in meetings { stored[m.acknowledgementKey] = m.start.timeIntervalSince1970 }
+    let cutoff = Date().addingTimeInterval(-2 * 24 * 3600).timeIntervalSince1970
+    stored = stored.filter { $0.value > cutoff }
+    UserDefaults.standard.set(stored, forKey: Self.acknowledgedKey)
+  }
+}
