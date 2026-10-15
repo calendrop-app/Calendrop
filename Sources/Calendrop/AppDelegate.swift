@@ -104,7 +104,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     if settingsWindow == nil {
       let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(model: model)))
       window.title = "Calendrop Settings"
-      window.styleMask = [.titled, .closable]
+      window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+      window.setContentSize(NSSize(width: 820, height: 560))
+      window.contentMinSize = NSSize(width: 620, height: 420)
       window.isReleasedWhenClosed = false
       window.center()
       settingsWindow = window

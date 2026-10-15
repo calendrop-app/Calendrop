@@ -1,113 +1,379 @@
+import AppKit
 import CalendropCore
 import SwiftUI
 
+/// Laid out like the settings of Kanaemi and Arto: a sidebar of pages with About
+/// at the bottom, and pages of grouped boxes whose rows carry the label and its
+/// description on the left and the control on the right. Every change applies at
+/// once; there is no Save button.
 struct SettingsView: View {
   @ObservedObject var model: AppModel
+  @State private var page: SettingsPage = .general
 
   var body: some View {
-    Form {
-      if model.isDemo {
-        Section {
-          Label(
-            "Demo mode: showing sample meetings. Changes here are not saved, and Google is never contacted.",
-            systemImage: "theatermasks")
-        }
-      }
-
-      Section {
-        TextField("Client ID", text: binding(\.clientID))
-        SecureField("Client secret", text: binding(\.clientSecret))
-      } header: {
-        Text("Google OAuth Client")
-      } footer: {
-        Text(
-          "In Google Cloud Console, enable the Google Calendar API and create an OAuth client of type “Desktop app”."
-        )
-        .font(.caption)
-        .foregroundStyle(.secondary)
-      }
-
-      Section("Accounts") {
-        ForEach(model.config.accounts, id: \.self) { account in
-          AccountRow(account: account, state: model.state(of: account), isBusy: model.isSigningIn) {
-            Task { await model.signIn(hint: account) }
-          } onRemove: {
-            model.remove(account: account)
+    NavigationSplitView {
+      VStack(spacing: 0) {
+        List(selection: $page) {
+          ForEach(SettingsPage.mainPages) { page in
+            Label(page.title, systemImage: page.symbol).tag(page)
           }
         }
-        Button("Add Account…") {
-          Task { await model.signIn(hint: nil) }
+        List(selection: $page) {
+          Label(SettingsPage.about.title, systemImage: SettingsPage.about.symbol).tag(SettingsPage.about)
         }
-        .disabled(model.config.oauthClient == nil || model.isSigningIn)
+        .frame(height: 44)
+        .scrollDisabled(true)
       }
-
-      Section("Cut-in") {
-        Stepper(value: binding(\.leadMinutes), in: 0...30) {
-          Text(
-            model.config.leadMinutes == 0
-              ? "Show when the meeting starts" : "Show \(model.config.leadMinutes) min before the meeting starts")
-        }
-      }
-
-      Section {
-        LabeledContent("Shared settings", value: model.store.url.path)
-          .textSelection(.enabled)
-      } header: {
-        Text("Sync")
-      } footer: {
-        Text(
-          "The client and the account list sync through iCloud Drive. Sign-in tokens stay in this Mac's Keychain, so each Mac signs in to each account once."
-        )
-        .font(.caption)
-        .foregroundStyle(.secondary)
-      }
-
-      if let error = model.lastError {
-        Section {
-          Label(error, systemImage: "exclamationmark.triangle")
-            .foregroundStyle(.red)
-            .textSelection(.enabled)
+      .navigationSplitViewColumnWidth(200)
+    } detail: {
+      SettingsPageView(title: page.title) {
+        switch page {
+        case .general: GeneralPage(model: model)
+        case .accounts: AccountsPage(model: model)
+        case .sync: SyncPage(model: model)
+        case .about: AboutPage()
         }
       }
     }
-    .formStyle(.grouped)
-    .frame(width: 560)
-    .frame(minHeight: 520)
+  }
+}
+
+enum SettingsPage: String, Identifiable, Hashable {
+  case general, accounts, sync, about
+
+  static let mainPages: [SettingsPage] = [.general, .accounts, .sync]
+
+  var id: String { rawValue }
+
+  var title: String {
+    switch self {
+    case .general: "General"
+    case .accounts: "Accounts"
+    case .sync: "Sync"
+    case .about: "About Calendrop"
+    }
+  }
+
+  var symbol: String {
+    switch self {
+    case .general: "gearshape"
+    case .accounts: "person.2"
+    case .sync: "icloud"
+    case .about: "info.circle"
+    }
+  }
+}
+
+// MARK: - Pages
+
+private struct GeneralPage: View {
+  @ObservedObject var model: AppModel
+
+  var body: some View {
+    if model.isDemo {
+      DemoNotice()
+    }
+    SettingsGroup("Cut-in") {
+      SettingsRow(
+        "Show before a meeting",
+        description: "How long before the start the cut-in covers every screen.",
+        reset: model.config.leadMinutes == SharedConfig().leadMinutes
+          ? nil
+          : ResetLink(label: minutes(SharedConfig().leadMinutes)) {
+            model.updateConfig { $0.leadMinutes = SharedConfig().leadMinutes }
+          }
+      ) {
+        Stepper(value: binding(\.leadMinutes), in: 0...30) {
+          Text(minutes(model.config.leadMinutes)).monospacedDigit()
+        }
+        .fixedSize()
+      }
+    }
+  }
+
+  private func minutes(_ n: Int) -> String {
+    n == 0 ? "At the start" : n == 1 ? "1 minute" : "\(n) minutes"
   }
 
   private func binding<T>(_ keyPath: WritableKeyPath<SharedConfig, T>) -> Binding<T> {
-    Binding(
-      get: { model.config[keyPath: keyPath] },
-      set: { value in model.updateConfig { $0[keyPath: keyPath] = value } }
-    )
+    Binding(get: { model.config[keyPath: keyPath] }, set: { v in model.updateConfig { $0[keyPath: keyPath] = v } })
+  }
+}
+
+private struct AccountsPage: View {
+  @ObservedObject var model: AppModel
+
+  var body: some View {
+    if model.isDemo {
+      DemoNotice()
+    }
+    SettingsGroup(
+      "Google accounts",
+      note: "Calendrop reads the calendars you have ticked in Google Calendar. Sign-in happens in your browser."
+    ) {
+      if model.config.accounts.isEmpty {
+        SettingsRow("No accounts yet", description: "Add an account to see its meetings.") { EmptyView() }
+      }
+      ForEach(model.config.accounts, id: \.self) { account in
+        AccountRow(model: model, account: account)
+      }
+    } footer: {
+      Button {
+        Task { await model.signIn(hint: nil) }
+      } label: {
+        Label(model.isSigningIn ? "Waiting for the browser…" : "Add Account…", systemImage: "plus")
+      }
+      .disabled(model.isDemo || model.config.oauthClient == nil || model.isSigningIn)
+    }
+
+    SettingsGroup(
+      "Google OAuth client",
+      note: "The Desktop app client created in Google Cloud Console. It is shared with your other Macs."
+    ) {
+      SettingsRow("Client ID") {
+        TextField("", text: binding(\.clientID), prompt: Text("…apps.googleusercontent.com"))
+          .frame(width: 320)
+      }
+      SettingsRow("Client secret") {
+        SecureField("", text: binding(\.clientSecret)).frame(width: 320)
+      }
+    }
+
+    if let error = model.lastError {
+      SettingsWarning(message: error)
+    }
+  }
+
+  private func binding<T>(_ keyPath: WritableKeyPath<SharedConfig, T>) -> Binding<T> {
+    Binding(get: { model.config[keyPath: keyPath] }, set: { v in model.updateConfig { $0[keyPath: keyPath] = v } })
   }
 }
 
 private struct AccountRow: View {
+  @ObservedObject var model: AppModel
   let account: String
-  let state: AppModel.AccountState
-  let isBusy: Bool
-  let onSignIn: () -> Void
-  let onRemove: () -> Void
 
   var body: some View {
-    HStack {
-      VStack(alignment: .leading, spacing: 2) {
-        Text(account)
-        switch state {
-        case .ok:
-          Text("Signed in on this Mac").font(.caption).foregroundStyle(.secondary)
-        case .needsSignIn:
-          Text("Sign-in required on this Mac").font(.caption).foregroundStyle(.orange)
-        case .error(let message):
-          Text(message).font(.caption).foregroundStyle(.red).lineLimit(2)
+    let state = model.state(of: account)
+    SettingsRow(account, description: status(state), descriptionColor: color(state)) {
+      HStack(spacing: 8) {
+        if state != .ok {
+          Button("Sign In…") { Task { await model.signIn(hint: account) } }
+            .disabled(model.isDemo || model.isSigningIn)
         }
+        Button("Remove", role: .destructive) { model.remove(account: account) }
       }
-      Spacer()
-      if state != .ok {
-        Button("Sign In…", action: onSignIn).disabled(isBusy)
-      }
-      Button("Remove", role: .destructive, action: onRemove)
     }
+  }
+
+  private func status(_ state: AppModel.AccountState) -> String {
+    switch state {
+    case .ok: "Signed in on this Mac"
+    case .needsSignIn: "Sign-in required on this Mac"
+    case .error(let message): message
+    }
+  }
+
+  private func color(_ state: AppModel.AccountState) -> Color {
+    switch state {
+    case .ok: .secondary
+    case .needsSignIn: .orange
+    case .error: .red
+    }
+  }
+}
+
+private struct SyncPage: View {
+  @ObservedObject var model: AppModel
+
+  var body: some View {
+    SettingsGroup(
+      "Shared settings",
+      note:
+        "Your accounts and settings follow you to every Mac signed in to the same iCloud. Sign-in tokens never leave this Mac's Keychain, so each Mac signs in to each account once."
+    ) {
+      SettingsRow("Settings file", description: model.store.url.path) {
+        Button("Show in Finder") {
+          NSWorkspace.shared.activateFileViewerSelecting([model.store.url])
+        }
+        .disabled(model.isDemo || !FileManager.default.fileExists(atPath: model.store.url.path))
+      }
+    }
+  }
+}
+
+private struct AboutPage: View {
+  private var version: String {
+    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development build"
+  }
+
+  var body: some View {
+    VStack(spacing: 10) {
+      Image(nsImage: NSApp.applicationIconImage)
+        .resizable()
+        .frame(width: 112, height: 112)
+      Text("Calendrop").font(.system(size: 28, weight: .bold))
+      Text("Version \(version)").foregroundStyle(.secondary)
+      Text("Cuts in on every screen before your next meeting.")
+        .padding(.top, 4)
+    }
+    .frame(maxWidth: .infinity)
+    .padding(.vertical, 12)
+
+    SettingsGroup("Links") {
+      SettingsRow("Source code", description: "github.com/calendrop-app/Calendrop") {
+        Link("Open", destination: URL(string: "https://github.com/calendrop-app/Calendrop")!)
+      }
+    }
+
+    Text("Alisue · MIT License")
+      .font(.callout)
+      .foregroundStyle(.secondary)
+      .frame(maxWidth: .infinity)
+  }
+}
+
+private struct DemoNotice: View {
+  var body: some View {
+    SettingsWarning(
+      message: "Demo mode — showing sample meetings. Changes are forgotten on quit and Google is never contacted.",
+      symbol: "theatermasks")
+  }
+}
+
+// MARK: - Building blocks
+
+private struct SettingsPageView<Content: View>: View {
+  let title: String
+  @ViewBuilder let content: Content
+
+  var body: some View {
+    VStack(spacing: 0) {
+      Text(title)
+        .font(.system(size: 20, weight: .bold))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 28)
+        .frame(height: 56)
+      Divider()
+      ScrollView {
+        VStack(alignment: .leading, spacing: 28) {
+          content
+        }
+        .frame(maxWidth: 760)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 24)
+        .frame(maxWidth: .infinity)
+      }
+    }
+    .background(Color(nsColor: .windowBackgroundColor))
+  }
+}
+
+private struct SettingsGroup<Content: View, Footer: View>: View {
+  let title: String
+  let note: String?
+  @ViewBuilder let content: Content
+  @ViewBuilder let footer: Footer
+
+  init(
+    _ title: String, note: String? = nil, @ViewBuilder content: () -> Content,
+    @ViewBuilder footer: () -> Footer = { EmptyView() }
+  ) {
+    self.title = title
+    self.note = note
+    self.content = content()
+    self.footer = footer()
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text(title).font(.system(size: 16, weight: .bold))
+      if let note {
+        Text(note)
+          .font(.callout)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      // Every row draws a hairline above itself; shifting the stack up by the
+      // hairline's height and clipping hides the first one.
+      VStack(spacing: 0) { content }
+        .padding(.top, -1)
+        .padding(.horizontal, 16)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.08)))
+      footer
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+  }
+}
+
+private struct ResetLink {
+  let label: String
+  let action: () -> Void
+}
+
+private struct SettingsRow<Control: View>: View {
+  let label: String
+  let description: String?
+  let descriptionColor: Color
+  let reset: ResetLink?
+  @ViewBuilder let control: Control
+
+  init(
+    _ label: String, description: String? = nil, descriptionColor: Color = .secondary, reset: ResetLink? = nil,
+    @ViewBuilder control: () -> Control
+  ) {
+    self.label = label
+    self.description = description
+    self.descriptionColor = descriptionColor
+    self.reset = reset
+    self.control = control()
+  }
+
+  var body: some View {
+    VStack(spacing: 0) {
+      Divider()
+      row
+    }
+  }
+
+  private var row: some View {
+    VStack(alignment: .trailing, spacing: 4) {
+      HStack(alignment: .center, spacing: 16) {
+        VStack(alignment: .leading, spacing: 2) {
+          Text(label)
+          if let description {
+            Text(description)
+              .font(.callout)
+              .foregroundStyle(descriptionColor)
+              .textSelection(.enabled)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
+        Spacer(minLength: 12)
+        control
+      }
+      if let reset {
+        Button("Reset to “\(reset.label)”", action: reset.action)
+          .buttonStyle(.link)
+          .font(.callout)
+      }
+    }
+    .padding(.vertical, 12)
+  }
+}
+
+private struct SettingsWarning: View {
+  let message: String
+  var symbol = "exclamationmark.triangle"
+
+  var body: some View {
+    Label(message, systemImage: symbol)
+      .font(.callout)
+      .textSelection(.enabled)
+      .padding(12)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.14)))
   }
 }
