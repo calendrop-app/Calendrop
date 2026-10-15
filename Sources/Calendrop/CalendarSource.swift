@@ -30,7 +30,7 @@ final class SampleCalendarSource: CalendarSource {
   private let startedAt = Date()
 
   let notice: String? =
-    "This build of Calendrop has no Google sign-in, so its accounts are samples with sample calendars and meetings. Add Account adds more. They stay on this Mac."
+    "This build of Calendrop has no Google sign-in, so its accounts are samples with sample calendars and meetings. Add Account adds more. Nothing is saved; they are forgotten when Calendrop quits."
 
   var presetAccounts: [(email: String, label: String?)] { SampleCalendar.presetAccounts }
 

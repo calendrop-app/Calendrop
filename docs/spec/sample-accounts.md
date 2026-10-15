@@ -11,7 +11,7 @@ be tried.
 - Sample accounts behave as real ones do: labels, colours, calendar choice,
   removal, the menu and the cut-in all work on them.
 - Join links lead to `example.com`, never to a real meeting.
-- The build never contacts Google. Its accounts and settings live in a file on
-  this Mac only and never reach the configuration shared through iCloud
-  Drive.
+- The build never contacts Google and saves nothing: its accounts and any
+  settings changed are forgotten when Calendrop quits, and the configuration shared
+  through iCloud Drive is never read or written.
 - The menu and settings say that the accounts are samples and why.

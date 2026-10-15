@@ -88,12 +88,38 @@ public struct SharedConfig: Codable, Equatable, Sendable {
   }
 }
 
-public struct ConfigStore: Sendable {
+/// Where the app keeps `SharedConfig`.
+public protocol ConfigStorage {
+  /// The file holding the settings, or nil when they are not kept anywhere.
+  var location: URL? { get }
+  func load() -> SharedConfig
+  func save(_ config: SharedConfig) throws
+}
+
+/// Settings for nothing worth keeping, such as sample accounts: they last as long
+/// as the store and never touch the disk.
+public final class MemoryConfigStore: ConfigStorage {
+  private var config = SharedConfig()
+
+  public init() {}
+
+  public var location: URL? { nil }
+
+  public func load() -> SharedConfig { config }
+
+  public func save(_ config: SharedConfig) throws {
+    self.config = config
+  }
+}
+
+public struct ConfigStore: ConfigStorage, Sendable {
   public var url: URL
 
   public init(url: URL) {
     self.url = url
   }
+
+  public var location: URL? { url }
 
   /// iCloud Drive when it is enabled on this Mac, otherwise a machine-local folder.
   public static func defaultURL(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
@@ -103,12 +129,6 @@ public struct ConfigStore: Sendable {
       return cloudDocs.appendingPathComponent("Calendrop/config.json")
     }
     return home.appendingPathComponent("Library/Application Support/Calendrop/config.json")
-  }
-
-  /// Where a build without Google sign-in keeps its sample accounts: on this Mac
-  /// only, so they never land in the settings real accounts share through iCloud.
-  public static func sampleURL(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
-    home.appendingPathComponent("Library/Application Support/Calendrop/sample-config.json")
   }
 
   /// A missing or unreadable file yields the defaults rather than an error, so a

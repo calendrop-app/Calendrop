@@ -17,7 +17,7 @@ final class AppModel: ObservableObject {
   @Published private(set) var isSigningIn = false
   @Published var lastError: String?
 
-  let store: ConfigStore
+  let store: any ConfigStorage
   private let source: CalendarSource
   private var isRefreshing = false
   private var refreshAgain = false
@@ -26,7 +26,7 @@ final class AppModel: ObservableObject {
   private var lastFetched: [String: [Meeting]] = [:]
   private static let acknowledgedKey = "acknowledgedMeetings"
 
-  init(source: CalendarSource, store: ConfigStore) {
+  init(source: CalendarSource, store: any ConfigStorage) {
     self.source = source
     self.store = store
     self.config = store.load()
@@ -66,7 +66,7 @@ final class AppModel: ObservableObject {
     do {
       try store.save(next)
     } catch {
-      lastError = "Could not save \(store.url.path): \(error.localizedDescription)"
+      lastError = "Could not save \(store.location?.path ?? "settings"): \(error.localizedDescription)"
     }
   }
 

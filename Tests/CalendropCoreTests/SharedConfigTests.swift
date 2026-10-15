@@ -65,13 +65,19 @@ import Testing
     #expect(ConfigStore.defaultURL(home: home) == cloud.appendingPathComponent("Calendrop/config.json"))
   }
 
-  @Test func keepsSampleAccountsOnThisMacEvenWithICloudDrive() throws {
-    let home = try tempDir()
-    try FileManager.default.createDirectory(
-      at: home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs"), withIntermediateDirectories: true
-    )
-    let url = ConfigStore.sampleURL(home: home)
-    #expect(url == home.appendingPathComponent("Library/Application Support/Calendrop/sample-config.json"))
-    #expect(url != ConfigStore.defaultURL(home: home))
+  @Test func aFileStoreSaysWhereItKeepsTheSettings() throws {
+    let url = try tempDir().appendingPathComponent("config.json")
+    #expect(ConfigStore(url: url).location == url)
+  }
+
+  @Test func aMemoryStoreKeepsSettingsOnlyForItsLifetime() throws {
+    let store = MemoryConfigStore()
+    #expect(store.location == nil)
+    #expect(store.load() == SharedConfig())
+    var config = SharedConfig()
+    config.addAccount("a@example.com")
+    try store.save(config)
+    #expect(store.load() == config)
+    #expect(MemoryConfigStore().load() == SharedConfig())
   }
 }

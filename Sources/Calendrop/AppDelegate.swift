@@ -13,13 +13,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   private static let refreshInterval: TimeInterval = 3 * 60
 
   /// Real Google accounts when the build carries the OAuth client, sample accounts
-  /// otherwise. Sample accounts keep their settings apart so they never reach the
-  /// settings real accounts share through iCloud.
+  /// otherwise. Sample accounts are kept in memory only, so they neither reach the
+  /// settings real accounts share through iCloud nor outlive the app.
   private static func makeModel() -> AppModel {
     if let client = OAuthClient(infoDictionary: Bundle.main.infoDictionary ?? [:]) {
       return AppModel(source: GoogleCalendarSource(client: client), store: ConfigStore(url: ConfigStore.defaultURL()))
     }
-    return AppModel(source: SampleCalendarSource(), store: ConfigStore(url: ConfigStore.sampleURL()))
+    return AppModel(source: SampleCalendarSource(), store: MemoryConfigStore())
   }
 
   func applicationDidFinishLaunching(_ notification: Notification) {

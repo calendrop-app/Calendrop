@@ -28,10 +28,11 @@ just install   # build Calendrop.app and copy it into /Applications
 ## Try it without Google
 
 A build made without the Google OAuth client (see below) cannot sign in to real
-accounts. Its **Add Account…** adds sample accounts instead, with sample
-calendars and meetings, so everything else — labels, colours, calendar choice,
-the menu and the cut-in — can be tried. Sample accounts stay on this Mac and
-never reach the settings shared through iCloud.
+accounts. It starts with sample accounts instead, with sample calendars and
+meetings, and **Add Account…** adds more, so everything else — labels, colours,
+calendar choice, the menu and the cut-in — can be tried. Nothing is saved:
+sample accounts and any settings changed are forgotten when Calendrop quits, and
+the settings shared through iCloud are never touched.
 
 ## Add Google accounts
 

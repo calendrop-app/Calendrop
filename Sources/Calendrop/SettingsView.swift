@@ -120,11 +120,17 @@ private struct SyncPage: View {
       note:
         "Accounts and settings live in the file below. On iCloud Drive it follows you to every Mac signed in to the same iCloud. Sign-in tokens never leave this Mac's Keychain, so each Mac signs in to each account once."
     ) {
-      SettingsRow("Settings file", description: model.store.url.path) {
-        Button("Show in Finder") {
-          NSWorkspace.shared.activateFileViewerSelecting([model.store.url])
+      if let url = model.store.location {
+        SettingsRow("Settings file", description: url.path) {
+          Button("Show in Finder") {
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+          }
+          .disabled(!FileManager.default.fileExists(atPath: url.path))
         }
-        .disabled(!FileManager.default.fileExists(atPath: model.store.url.path))
+      } else {
+        SettingsRow(
+          "Settings file", description: "None — these settings are not saved and are forgotten when Calendrop quits."
+        ) { EmptyView() }
       }
     }
   }
