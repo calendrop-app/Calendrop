@@ -26,9 +26,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     }
 
     refreshNow()
-    if model.config.oauthClient == nil || model.config.accounts.isEmpty {
-      openSettings()
-    }
   }
 
   private func schedule(every interval: TimeInterval, _ body: @escaping @MainActor (AppDelegate) -> Void) {
