@@ -8,7 +8,7 @@ import Security
 /// The item is explicitly non-synchronizable: tokens never leave the machine, and a
 /// second Mac signs in on its own.
 final class KeychainStorage: RefreshTokenStorage {
-  private static let service = "com.lambdalisue.calendrop.refresh-tokens"
+  private static let service = "io.github.calendrop-app.calendrop.refresh-tokens"
   private static let itemAccount = "accounts"
 
   private static let query: [String: Any] = [
