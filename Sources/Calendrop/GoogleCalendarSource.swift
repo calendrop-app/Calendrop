@@ -23,6 +23,7 @@ final class GoogleCalendarSource: CalendarSource {
   }
 
   private let client: OAuthClient
+  private let vault = RefreshTokenVault(storage: KeychainStorage())
   private var accessTokens: [String: AccessToken] = [:]
   private let api = URL(string: "https://www.googleapis.com/calendar/v3")!
 
@@ -34,7 +35,7 @@ final class GoogleCalendarSource: CalendarSource {
   let presetAccounts: [(email: String, label: String?)] = []
 
   func isSignedIn(_ account: String) -> Bool {
-    Keychain.refreshToken(for: account) != nil
+    (try? vault.token(for: account)) != nil
   }
 
   func signIn(hint: String?, existing: [String]) async throws -> String {
@@ -43,14 +44,14 @@ final class GoogleCalendarSource: CalendarSource {
     let primary = try await get(
       api.appendingPathComponent("users/me/calendarList/primary"), query: [], token: grant.accessToken, account: "")
     let email = try GoogleCalendarParser.accountAddress(fromPrimaryCalendar: primary)
-    try Keychain.setRefreshToken(grant.refreshToken, for: email)
+    try vault.set(grant.refreshToken, for: email)
     accessTokens[email] = AccessToken(value: grant.accessToken, expiry: Date().addingTimeInterval(grant.expiresIn))
     return email
   }
 
-  func forget(_ account: String) {
-    Keychain.deleteRefreshToken(for: account)
+  func forget(_ account: String) throws {
     accessTokens[account] = nil
+    try vault.remove(account)
   }
 
   /// Every calendar the account can read, with its main calendar marked.
@@ -101,7 +102,7 @@ final class GoogleCalendarSource: CalendarSource {
     if let cached = accessTokens[account], cached.expiry > Date().addingTimeInterval(60) {
       return cached.value
     }
-    guard let refreshToken = Keychain.refreshToken(for: account) else { throw CalendarError.needsSignIn }
+    guard let refreshToken = try vault.token(for: account) else { throw CalendarError.needsSignIn }
 
     var request = URLRequest(url: OAuthClient.tokenEndpoint)
     request.httpMethod = "POST"
@@ -111,7 +112,7 @@ final class GoogleCalendarSource: CalendarSource {
     let status = (response as? HTTPURLResponse)?.statusCode ?? 0
     guard status == 200 else {
       if let error = try? JSONDecoder().decode(TokenErrorResponse.self, from: data), error.requiresSignIn {
-        Keychain.deleteRefreshToken(for: account)
+        try? vault.remove(account)
         throw CalendarError.needsSignIn
       }
       throw CalendarError.http(status, String(decoding: data, as: UTF8.self))

@@ -19,6 +19,10 @@ between the user's Macs.
 - An event visible through several accounts is shown once.
 - Google Meet links and Google Calendar event pages open as the account the
   meeting came from, even when the browser defaults to another Google account.
+- When macOS asks whether Calendrop may use its Keychain, it asks once for all
+  accounts, and at most once per launch. The exception is the first launch after
+  updating from a version that kept one grant per account: it asks once for each
+  of those grants, and stops at the first one turned down.
 - An account whose grant is missing or revoked is shown as needing sign-in;
   its meetings disappear until it is signed in again. When the network is
   unavailable, the meetings last fetched are kept.

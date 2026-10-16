@@ -15,7 +15,7 @@ protocol CalendarSource: AnyObject {
   /// already set up.
   func signIn(hint: String?, existing: [String]) async throws -> String
   /// Drops what this Mac holds for `account`.
-  func forget(_ account: String)
+  func forget(_ account: String) throws
   /// Every calendar the account offers, with its main calendar marked.
   func calendars(account: String) async throws -> [CalendarRef]
   /// Every meeting between `from` and `to` on `calendars`.
@@ -41,7 +41,7 @@ final class SampleCalendarSource: CalendarSource {
     return hint ?? SampleCalendar.newAccount(existing: existing)
   }
 
-  func forget(_ account: String) {}
+  func forget(_ account: String) throws {}
 
   func calendars(account: String) async throws -> [CalendarRef] {
     SampleCalendar.calendars(for: account)
