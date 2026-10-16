@@ -23,6 +23,11 @@ on:
       sign:
         type: boolean
         default: false
+      # The release tag, vX.Y.Z, whose X.Y.Z becomes the app's version. Left
+      # empty, the app keeps Info.plist's 0.0.0.
+      tag:
+        type: string
+        default: ''
 
 # As in ci.yml: a pull request only needs its latest commit packaged, and runs
 # on main queue. A release is never cancelled. Called by a workflow, this
@@ -42,16 +47,18 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      # A release ships the version Info.plist states; a tag naming another
-      # would publish a zip whose name and app disagree with it.
-      - name: Check the tag against the app's version
-        if: inputs.sign
+      # Checked before anything is built, as a tag that is not vX.Y.Z would
+      # give the app a version macOS cannot compare.
+      - name: Take the app's version from the tag
+        if: inputs.tag != ''
         run: |
-          version="$(plutil -extract CFBundleShortVersionString raw Resources/Info.plist)"
-          if [[ "v$version" != "$GITHUB_REF_NAME" ]]; then
-            echo "the tag $GITHUB_REF_NAME does not match the app's version $version" >&2
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "the tag $TAG is not vX.Y.Z" >&2
             exit 1
           fi
+          echo "CALENDROP_VERSION=${BASH_REMATCH[1]}" >> "$GITHUB_ENV"
+        env:
+          TAG: ${{ inputs.tag }}
       # Outside Nix, whose shell the package needs only these from; Swift comes
       # from the runner's Xcode.
       - run: brew install just librsvg
