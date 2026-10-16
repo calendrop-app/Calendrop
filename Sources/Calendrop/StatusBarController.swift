@@ -6,6 +6,7 @@ protocol StatusBarActions: AnyObject {
   func join(_ meeting: Meeting)
   func openSettings()
   func signIn(hint: String?)
+  func refreshNow()
 }
 
 @MainActor
@@ -84,6 +85,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     addMeetings(to: menu, now: now)
 
     menu.addItem(.separator())
+    if !model.config.accounts.isEmpty {
+      addSyncStatus(to: menu, now: now)
+      menu.addItem(.separator())
+    }
     menu.addItem(action("Settings…", #selector(openSettings), key: ","))
     menu.addItem(.separator())
     menu.addItem(
@@ -93,7 +98,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   private func addMeetings(to menu: NSMenu, now: Date) {
     let upcoming = model.meetings.filter { $0.end > now }
     guard !upcoming.isEmpty else {
-      let empty = NSMenuItem(title: "No upcoming meetings", action: nil, keyEquivalent: "")
+      let empty = NSMenuItem(title: "No more meetings today or tomorrow", action: nil, keyEquivalent: "")
       empty.isEnabled = false
       menu.addItem(empty)
       return
@@ -109,6 +114,17 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(menuItem(for: meeting, now: now))
       }
     }
+  }
+
+  private func addSyncStatus(to menu: NSMenu, now: Date) {
+    let title =
+      model.isRefreshing
+      ? "Updating…" : SyncStatus.summary(calendars: model.calendarsRead, readAt: model.lastReadAt, now: now)
+    let status = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+    status.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
+    status.isEnabled = false
+    menu.addItem(status)
+    menu.addItem(action("Refresh Now", #selector(refreshNow), key: "r"))
   }
 
   private func menuItem(for meeting: Meeting, now: Date) -> NSMenuItem {
@@ -255,6 +271,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   @objc private func openEvent(_ sender: NSMenuItem) {
     guard let url = (sender.representedObject as? Meeting)?.eventURL else { return }
     NSWorkspace.shared.open(url)
+  }
+
+  @objc private func refreshNow() {
+    actions?.refreshNow()
   }
 
   @objc private func signIn(_ sender: NSMenuItem) {
