@@ -25,6 +25,15 @@ struct CutinView: View {
         colors: [Color(theme.backgroundTop), Color(theme.backgroundBottom)],
         startPoint: .top, endPoint: .bottom
       )
+      // The drop-in springs past where it settles. The background runs on above
+      // the screen, so the bounce never uncovers the top edge.
+      .background(alignment: .top) {
+        GeometryReader { proxy in
+          Color(theme.backgroundTop)
+            .frame(height: proxy.size.height / 2)
+            .offset(y: -proxy.size.height / 2)
+        }
+      }
       .opacity(theme.backgroundOpacity)
       .ignoresSafeArea()
 
