@@ -1,11 +1,24 @@
 import CalendropCore
 import SwiftUI
 
+extension CompactPosition {
+  fileprivate var label: String {
+    switch self {
+    case .topLeading: "Top Left"
+    case .top: "Top Center"
+    case .topTrailing: "Top Right"
+    case .bottomLeading: "Bottom Left"
+    case .bottom: "Bottom Center"
+    case .bottomTrailing: "Bottom Right"
+    }
+  }
+}
+
 /// Picks the cut-in's look: a preset or a custom theme, previewed live and tried
-/// full screen.
+/// full screen or as the compact card.
 struct AppearancePage: View {
   @ObservedObject var model: AppModel
-  let onTry: (SampleCalendar.Scenario) -> Void
+  let onTry: (SampleCalendar.Scenario, CutinPresentation) -> Void
   @State private var previewScenario: SampleCalendar.Scenario = .single
 
   private var appearance: CutinAppearance { model.config.appearance }
@@ -40,19 +53,47 @@ struct AppearancePage: View {
       }
       .padding(.vertical, 14)
     } footer: {
-      Button {
-        onTry(previewScenario)
-      } label: {
-        Label("Try Full Screen", systemImage: "play.rectangle")
+      HStack {
+        Button {
+          onTry(previewScenario, .compact)
+        } label: {
+          Label("Try Compact", systemImage: "rectangle.inset.topright.filled")
+        }
+        .help("Shows the card a cut-in takes during a call. Join or hold its control to close it.")
+        Button {
+          onTry(previewScenario, .fullScreen)
+        } label: {
+          Label("Try Full Screen", systemImage: "play.rectangle")
+        }
+        .help("Shows the cut-in on every screen. Join or hold the corner control to close it.")
       }
-      .help("Shows the cut-in on every screen. Join or hold the corner control to close it.")
+    }
+
+    SettingsGroup("Compact card") {
+      SettingsRow(
+        "Position",
+        description: "Where on the main screen the card shown during a call sits."
+      ) {
+        Picker(
+          "",
+          selection: Binding(
+            get: { appearance.compactPosition },
+            set: { position in model.updateConfig { $0.appearance.compactPosition = position } })
+        ) {
+          ForEach(CompactPosition.allCases, id: \.self) { position in
+            Text(position.label).tag(position)
+          }
+        }
+        .labelsHidden()
+        .fixedSize()
+      }
     }
 
     SettingsGroup("Motion") {
       SettingsRow(
         "Drop in from the top",
         description:
-          "When off, the cut-in appears at once. With Reduce Motion on in System Settings, it fades in instead."
+          "When off, the cut-in appears at once; the compact card, which otherwise slides in from the nearer edge, too. With Reduce Motion on in System Settings, both fade in instead."
       ) {
         Toggle(
           "",

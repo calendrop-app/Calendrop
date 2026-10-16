@@ -8,8 +8,8 @@ import SwiftUI
 /// once; there is no Save button.
 struct SettingsView: View {
   @ObservedObject var model: AppModel
-  /// Shows the cut-in full screen with sample meetings.
-  let onTry: (SampleCalendar.Scenario) -> Void
+  /// Shows the cut-in with sample meetings, full screen or as the compact card.
+  let onTry: (SampleCalendar.Scenario, CutinPresentation) -> Void
   @State private var page: SettingsPage = .general
 
   var body: some View {
@@ -69,6 +69,16 @@ enum SettingsPage: String, Identifiable, Hashable {
   }
 }
 
+extension CutinPresentation {
+  fileprivate var label: String {
+    switch self {
+    case .fullScreen: "Full screen"
+    case .compact: "Compact"
+    case .hidden: "Don't show"
+    }
+  }
+}
+
 // MARK: - Pages
 
 private struct GeneralPage: View {
@@ -116,6 +126,32 @@ private struct GeneralPage: View {
         Toggle("", isOn: binding(\.cutInWithoutAcceptance))
           .toggleStyle(.switch)
           .labelsHidden()
+      }
+    }
+    SettingsGroup(
+      "During a call",
+      note: "You count as in a call while any app uses the microphone or the camera."
+    ) {
+      SettingsRow(
+        "Cut-in during a call",
+        description: "How a meeting coming due while you are in a call interrupts you."
+      ) {
+        Picker("", selection: binding(\.cutInDuringCall)) {
+          ForEach(CutinPresentation.allCases, id: \.self) { presentation in
+            Text(presentation.label).tag(presentation)
+          }
+        }
+        .labelsHidden()
+        .fixedSize()
+      }
+      SettingsRow(
+        "Cover the screen when the call ends",
+        description: "A meeting held back during the call cuts in full screen once the call ends, unless it is over."
+      ) {
+        Toggle("", isOn: binding(\.coverAfterCall))
+          .toggleStyle(.switch)
+          .labelsHidden()
+          .disabled(model.config.cutInDuringCall == .fullScreen)
       }
     }
   }

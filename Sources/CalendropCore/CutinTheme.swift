@@ -148,6 +148,7 @@ public struct CutinAppearance: Codable, Equatable, Sendable {
   public var custom: CutinTheme = CutinPreset.allCases[0].theme
   /// Whether the cut-in falls in from the top when it appears, or simply appears.
   public var dropsIn = true
+  public var compactPosition = CompactPosition.top
 
   public init() {}
 
@@ -166,7 +167,7 @@ public struct CutinAppearance: Codable, Equatable, Sendable {
   }
 
   private enum CodingKeys: String, CodingKey {
-    case style, custom, dropsIn
+    case style, custom, dropsIn, compactPosition
   }
 
   private static let customKey = "custom"
@@ -181,6 +182,7 @@ public struct CutinAppearance: Codable, Equatable, Sendable {
     }
     custom = (try? c.decodeIfPresent(CutinTheme.self, forKey: .custom)) ?? custom
     dropsIn = (try? c.decodeIfPresent(Bool.self, forKey: .dropsIn)) ?? dropsIn
+    compactPosition = (try? c.decodeIfPresent(CompactPosition.self, forKey: .compactPosition)) ?? compactPosition
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -191,5 +193,6 @@ public struct CutinAppearance: Codable, Equatable, Sendable {
     }
     try c.encode(custom, forKey: .custom)
     try c.encode(dropsIn, forKey: .dropsIn)
+    try c.encode(compactPosition, forKey: .compactPosition)
   }
 }
