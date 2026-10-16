@@ -34,6 +34,10 @@ between the user's Macs.
 - The menu says how many calendars it read and how long ago every account was
   last read, so an empty list can be told apart from one that was never read.
   When nothing is left today or tomorrow, the menu says so in those words.
+- When nothing is left today or tomorrow, Calendrop also looks further ahead
+  and shows the first meeting it finds there, or the last day it looked
+  through. It does neither while an account cannot be read, since that
+  account might hold an earlier meeting.
 
 ## Shared configuration
 
