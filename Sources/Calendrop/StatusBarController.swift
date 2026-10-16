@@ -15,6 +15,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   private let model: AppModel
   private weak var actions: StatusBarActions?
   private static let titleLength = 24
+  /// "Wed, Oct 21". English like the rest of the menu, not the system language.
+  private static let dayFormat = Date.FormatStyle.dateTime.weekday(.abbreviated).month(.abbreviated).day()
+    .locale(Locale(identifier: "en_US"))
 
   init(model: AppModel, actions: StatusBarActions) {
     self.model = model
@@ -109,7 +112,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     for day in byDay.keys.sorted() {
       let header =
         calendar.isDateInToday(day)
-        ? "Today" : calendar.isDateInTomorrow(day) ? "Tomorrow" : day.formatted(date: .abbreviated, time: .omitted)
+        ? "Today" : calendar.isDateInTomorrow(day) ? "Tomorrow" : day.formatted(Self.dayFormat)
       menu.addItem(.sectionHeader(title: header))
       for meeting in byDay[day]! {
         menu.addItem(menuItem(for: meeting, now: now))
@@ -120,13 +123,12 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   /// The next meeting past tomorrow, or how far ahead nothing was found.
   private func addLookahead(to menu: NSMenu, now: Date) {
     guard let lookahead = model.lookahead else { return }
-    let dayFormat = Date.FormatStyle.dateTime.weekday(.abbreviated).month(.abbreviated).day()
     if let next = lookahead.next {
-      menu.addItem(.sectionHeader(title: "Next · \(next.start.formatted(dayFormat))"))
+      menu.addItem(.sectionHeader(title: "Next · \(next.start.formatted(Self.dayFormat))"))
       menu.addItem(menuItem(for: next, now: now))
     } else {
       let none = NSMenuItem(
-        title: "Nothing scheduled through \(lookahead.lastDay.formatted(dayFormat))", action: nil,
+        title: "Nothing scheduled through \(lookahead.lastDay.formatted(Self.dayFormat))", action: nil,
         keyEquivalent: "")
       none.isEnabled = false
       menu.addItem(none)
