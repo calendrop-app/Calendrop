@@ -21,6 +21,9 @@ final class AppModel: ObservableObject {
   let store: any ConfigStorage
   private let source: CalendarSource
   @Published private(set) var isRefreshing = false
+  /// When every account was last read without an error, and how many calendars that read.
+  @Published private(set) var lastReadAt: Date?
+  @Published private(set) var calendarsRead = 0
   private var refreshAgain = false
   /// Each account's meetings as last fetched, before merging, so an offline refresh can
   /// re-apply a changed calendar choice without losing copies merged away.
@@ -162,12 +165,14 @@ final class AppModel: ObservableObject {
     var lists: [[Meeting]] = []
     var states: [String: AccountState] = [:]
     var fetchedCalendars: [String: [CalendarRef]] = [:]
+    var read = 0
     for account in config.accounts {
       do {
         let all = try await source.calendars(account: account.email)
         fetchedCalendars[account.email] = all
         let used = all.filter(account.uses)
         let fetched = try await source.meetings(account: account.email, calendars: used, from: from, to: to)
+        read += used.count
         lastFetched[account.email] = fetched
         lists.append(fetched)
         states[account.email] = .ok
@@ -187,6 +192,11 @@ final class AppModel: ObservableObject {
     meetings = Meeting.merge(lists.map { $0.filter { current.contains($0.account) } })
     calendars = fetchedCalendars.filter { current.contains($0.key) }
     accountStates = states.filter { current.contains($0.key) }
+    // An account added while the fetch was in flight has not been read yet.
+    if !config.accounts.isEmpty, config.accounts.allSatisfy({ accountStates[$0.email] == .ok }) {
+      lastReadAt = Date()
+      calendarsRead = read
+    }
   }
 
   // MARK: Acknowledgements

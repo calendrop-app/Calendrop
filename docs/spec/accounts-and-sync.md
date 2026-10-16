@@ -27,6 +27,14 @@ between the user's Macs.
   its meetings disappear until it is signed in again. When the network is
   unavailable, the meetings last fetched are kept.
 
+## Staying current
+
+- Calendrop reads today's and tomorrow's meetings, and reads them again every
+  few minutes, when the Mac wakes, and when the user asks from the menu.
+- The menu says how many calendars it read and how long ago every account was
+  last read, so an empty list can be told apart from one that was never read.
+  When nothing is left today or tomorrow, the menu says so in those words.
+
 ## Shared configuration
 
 Calendrop keeps its configuration in `Calendrop/config.json` on iCloud Drive, or in
