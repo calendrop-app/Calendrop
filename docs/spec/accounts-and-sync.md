@@ -20,9 +20,7 @@ between the user's Macs.
 - Google Meet links and Google Calendar event pages open as the account the
   meeting came from, even when the browser defaults to another Google account.
 - When macOS asks whether Calendrop may use its Keychain, it asks once for all
-  accounts, and at most once per launch. The exception is the first launch after
-  updating from a version that kept one grant per account: it asks once for each
-  of those grants, and stops at the first one turned down.
+  accounts, and at most once per launch.
 - An account whose grant is missing or revoked is shown as needing sign-in;
   its meetings disappear until it is signed in again. When the network is
   unavailable, the meetings last fetched are kept.
@@ -65,8 +63,7 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 | `color` | string | `#RRGGBB`; a colour not yet used by another account when missing |
 | `calendarIDs` | array of strings | Google Calendar IDs to read; when missing, the account's main calendar only |
 
-An entry may also be a bare address string, as older versions wrote. An entry
-that cannot be read is skipped without affecting the others.
+An entry that cannot be read is skipped without affecting the others.
 
 `appearance` holds:
 

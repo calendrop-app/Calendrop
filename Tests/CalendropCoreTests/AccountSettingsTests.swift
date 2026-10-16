@@ -53,13 +53,6 @@ import Testing
 }
 
 @Suite struct SharedConfigAccountsTests {
-  @Test func readsTheOlderListOfAddresses() throws {
-    let config = try JSONDecoder().decode(
-      SharedConfig.self, from: Data(#"{"accounts":["a@example.com","b@example.com"]}"#.utf8))
-    #expect(config.accounts.map(\.email) == ["a@example.com", "b@example.com"])
-    #expect(config.accounts.map(\.color) == Array(AccountPalette.colors.prefix(2)))
-  }
-
   @Test func roundTripsAccountSettings() throws {
     var config = SharedConfig()
     config.addAccount("a@example.com")
