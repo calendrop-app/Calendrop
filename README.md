@@ -36,6 +36,23 @@ https://github.com/user-attachments/assets/3710b75f-57e9-44a7-be7e-d54129cfe9dc
   (Control-Option-Command-Escape) dismisses it too. Escape alone and ⌘W do
   nothing.
 
+## Inspired by MeetingBar
+
+Calendrop is strongly inspired by [MeetingBar](https://github.com/leits/MeetingBar),
+a menu bar app that keeps your next meeting in sight and joins it in one click.
+
+The difference is where the full-screen reminder sits. In MeetingBar it is one
+reminder among several: off by default, next to the macOS notifications, with
+little to adjust. In Calendrop the cut-in is the app itself, and everything else
+is there to make it hard to miss and easy to act on. Calendrop was built as a
+separate app for that, and for what MeetingBar 4.11 did not do for us:
+
+- Its Google Calendar connection takes one Google account. Calendrop reads
+  several at once and merges them into one timeline.
+- Its full-screen reminder appears on one display, and could be left off-screen
+  and impossible to close when that display was unplugged. Calendrop's cut-in
+  covers every display and is rebuilt whenever the screens change.
+
 ## Install
 
 Requires macOS 14+ on Apple silicon. With [Homebrew](https://brew.sh/):
