@@ -101,6 +101,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
       let empty = NSMenuItem(title: "No more meetings today or tomorrow", action: nil, keyEquivalent: "")
       empty.isEnabled = false
       menu.addItem(empty)
+      addLookahead(to: menu, now: now)
       return
     }
     let calendar = Calendar.current
@@ -113,6 +114,22 @@ final class StatusBarController: NSObject, NSMenuDelegate {
       for meeting in byDay[day]! {
         menu.addItem(menuItem(for: meeting, now: now))
       }
+    }
+  }
+
+  /// The next meeting past tomorrow, or how far ahead nothing was found.
+  private func addLookahead(to menu: NSMenu, now: Date) {
+    guard let lookahead = model.lookahead else { return }
+    let dayFormat = Date.FormatStyle.dateTime.weekday(.abbreviated).month(.abbreviated).day()
+    if let next = lookahead.next {
+      menu.addItem(.sectionHeader(title: "Next · \(next.start.formatted(dayFormat))"))
+      menu.addItem(menuItem(for: next, now: now))
+    } else {
+      let none = NSMenuItem(
+        title: "Nothing scheduled through \(lookahead.lastDay.formatted(dayFormat))", action: nil,
+        keyEquivalent: "")
+      none.isEnabled = false
+      menu.addItem(none)
     }
   }
 
