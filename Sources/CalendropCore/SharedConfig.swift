@@ -13,10 +13,17 @@ public struct SharedConfig: Codable, Equatable, Sendable {
   public static let leadMinutesRange = 0...120
   public var cutInWithoutJoinLink = false
   public var cutInWithoutAcceptance = true
+  public var cutInDuringCall = CutinPresentation.compact
+  public var coverAfterCall = true
   public var appearance = CutinAppearance()
 
   private enum CodingKeys: String, CodingKey {
-    case accounts, leadMinutes, cutInWithoutJoinLink, cutInWithoutAcceptance, appearance
+    case accounts, leadMinutes, cutInWithoutJoinLink, cutInWithoutAcceptance, cutInDuringCall, coverAfterCall,
+      appearance
+  }
+
+  public var callAwareness: CallAwareness {
+    CallAwareness(duringCall: cutInDuringCall, coverAfterCall: coverAfterCall)
   }
 
   public init() {}
@@ -30,6 +37,9 @@ public struct SharedConfig: Codable, Equatable, Sendable {
       try c.decodeIfPresent(Bool.self, forKey: .cutInWithoutJoinLink) ?? defaults.cutInWithoutJoinLink
     cutInWithoutAcceptance =
       try c.decodeIfPresent(Bool.self, forKey: .cutInWithoutAcceptance) ?? defaults.cutInWithoutAcceptance
+    cutInDuringCall =
+      (try? c.decodeIfPresent(CutinPresentation.self, forKey: .cutInDuringCall)) ?? defaults.cutInDuringCall
+    coverAfterCall = try c.decodeIfPresent(Bool.self, forKey: .coverAfterCall) ?? defaults.coverAfterCall
     appearance = (try? c.decodeIfPresent(CutinAppearance.self, forKey: .appearance)) ?? defaults.appearance
   }
 

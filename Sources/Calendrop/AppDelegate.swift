@@ -11,6 +11,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   private var timers: [Timer] = []
   /// Whether the cut-in on screen is a trial from the appearance settings.
   private var showingTrial = false
+  private var callDetector = CallDetector()
+  private var arrivals = ArrivalTracker()
 
   private static let refreshInterval: TimeInterval = 3 * 60
 
@@ -56,7 +58,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     statusBar?.updateTitle(now: now)
     presenter.theme = model.config.appearance.theme
     presenter.dropsIn = model.config.appearance.dropsIn
+    presenter.compactPosition = model.config.appearance.compactPosition
     presenter.accounts = model.config.accounts
+    // Asked on every tick, not only once a cut-in is due: a meeting coming due while
+    // a call app briefly lets go of the devices must still find the call.
+    let inCall = callDetector.update(deviceInUse: CaptureDevices.inUse, now: now)
     let group = model.policy.cutInGroup(model.meetings, now: now, acknowledged: model.acknowledged)
     // A trial never mixes in real meetings, and never holds one back: a real
     // meeting coming due ends the trial, acknowledging none of its samples.
@@ -69,11 +75,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     }
     // Once shown, the cut-in stays until the user acts, even past the grace period;
     // newly gathered meetings join the ones already on screen.
-    let shownIDs = Set(presenter.meetings.map(\.id))
-    let added = group.filter { !shownIDs.contains($0.id) }
-    if !added.isEmpty {
-      presenter.show((presenter.meetings + added).sorted { $0.start < $1.start })
+    let awareness = model.config.callAwareness
+    let showing = presenter.isShowing ? presenter.presentation : nil
+    let held = showing.map { awareness.kept(presenter.meetings, showing: $0, now: now, latest: model.meetings) } ?? []
+    let heldIDs = Set(held.map(\.id))
+    let added = group.filter { !heldIDs.contains($0.id) }
+    let meetings = (held + added).sorted { $0.start < $1.start }
+    if meetings.isEmpty {
+      if presenter.isShowing { closeCutin() }
+      return
     }
+    let arriving = arrivals.arrive(
+      model.policy.meetingsToCutIn(model.meetings, now: now, acknowledged: model.acknowledged))
+    presenter.show(
+      meetings,
+      as: awareness.presentation(inCall: inCall, showing: held.isEmpty ? nil : showing, arriving: arriving))
     presenter.syncWithScreens(force: false)
   }
 
@@ -84,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
 
   private func closeCutin() {
     showingTrial = false
+    arrivals.reset()
     presenter.hide()
   }
 
@@ -120,19 +137,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
   }
 
   /// Shows a scenario at once, for judging the cut-in's look; nothing it shows is a real meeting.
-  func tryCutin(_ scenario: SampleCalendar.Scenario) {
+  func tryCutin(_ scenario: SampleCalendar.Scenario, as presentation: CutinPresentation) {
+    // A cut-in held back during a call keeps its meetings; a trial would drop them.
+    guard showingTrial || !presenter.isShowing else { return }
     showingTrial = true
     presenter.theme = model.config.appearance.theme
     presenter.dropsIn = model.config.appearance.dropsIn
+    presenter.compactPosition = model.config.appearance.compactPosition
     presenter.accounts = model.config.accounts
-    presenter.show(scenario.meetings(now: Date(), leadTime: model.policy.leadTime))
+    presenter.show(scenario.meetings(now: Date(), leadTime: model.policy.leadTime), as: presentation)
   }
 
   func openSettings() {
     if settingsWindow == nil {
       let window = NSWindow(
         contentViewController: NSHostingController(
-          rootView: SettingsView(model: model, onTry: { [weak self] in self?.tryCutin($0) })))
+          rootView: SettingsView(model: model, onTry: { [weak self] in self?.tryCutin($0, as: $1) })))
       window.title = "Calendrop Settings"
       window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
       window.setContentSize(NSSize(width: 820, height: 560))

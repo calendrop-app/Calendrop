@@ -68,6 +68,93 @@ struct CutinView: View {
   }
 }
 
+/// The cut-in while the user is in a call: a card in a corner that leaves the call in
+/// view, with the same way to join and the same deliberate way to dismiss.
+struct CompactCutinView: View {
+  let meetings: [Meeting]
+  let theme: CutinTheme
+  var accounts: [AccountSettings] = []
+  /// The whole height the card may take, shadow room included, when its meetings do
+  /// not fit the screen; they scroll then, so the dismiss control stays on screen.
+  var height: CGFloat?
+  let onJoin: (Meeting) -> Void
+  let onDismiss: () -> Void
+  private let shadowRoom: CGFloat = 12
+
+  var body: some View {
+    let palette = CutinPalette(theme)
+    VStack(alignment: .leading, spacing: 14) {
+      if height == nil {
+        rows
+      } else {
+        ScrollView { rows }
+      }
+      // The emergency key is not offered: the card never takes the keyboard from the call.
+      HoldToDismissButton(action: onDismiss, showsEmergencyKey: false)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .padding(18)
+    .frame(width: 380)
+    .frame(height: height.map { $0 - shadowRoom * 2 })
+    .background(
+      RoundedRectangle(cornerRadius: 16)
+        .fill(
+          LinearGradient(
+            colors: [Color(theme.backgroundTop), Color(theme.backgroundBottom)], startPoint: .top,
+            endPoint: .bottom))
+    )
+    .overlay(RoundedRectangle(cornerRadius: 16).stroke(palette.text.opacity(0.15)))
+    .padding(shadowRoom)
+    .shadow(color: .black.opacity(0.3), radius: 10, y: 4)
+    .foregroundStyle(palette.text)
+    .fontDesign(theme.fontDesign.swiftUI)
+    .environment(\.colorScheme, theme.backgroundTop.isLight ? .light : .dark)
+    .environment(\.cutinPalette, palette)
+    .environment(\.cutinAccounts, accounts)
+  }
+
+  private var rows: some View {
+    VStack(alignment: .leading, spacing: 14) {
+      ForEach(meetings) { meeting in
+        CompactMeetingRow(meeting: meeting, onJoin: onJoin)
+      }
+    }
+  }
+}
+
+private struct CompactMeetingRow: View {
+  @Environment(\.cutinPalette) private var palette
+  let meeting: Meeting
+  let onJoin: (Meeting) -> Void
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 12) {
+      VStack(alignment: .leading, spacing: 4) {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+          let remaining = meeting.start.timeIntervalSince(context.date)
+          Text(remaining > 0 ? "Starts in \(Countdown.clock(remaining))" : "Started \(Countdown.clock(-remaining)) ago")
+            .font(.system(size: 13, weight: .bold))
+            .monospacedDigit()
+            .foregroundStyle(remaining > 0 ? palette.text : palette.late)
+        }
+        Text(meeting.title)
+          .font(.system(size: 15, weight: .semibold))
+          .lineLimit(2)
+        HStack(spacing: 6) {
+          Text(CutinStyle.timeRange(meeting))
+            .foregroundStyle(palette.text.opacity(0.6))
+          ResponseBadge(meeting: meeting)
+        }
+        .font(.system(size: 11))
+        AccountBadge(meeting: meeting)
+          .font(.system(size: 11))
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      JoinButton(meeting: meeting, size: .compact, onJoin: onJoin)
+    }
+  }
+}
+
 /// The theme's colours as SwiftUI needs them, shared with every part of the cut-in.
 struct CutinPalette {
   var text: Color
@@ -240,7 +327,7 @@ private struct SingleMeetingView: View {
         MeetingDetails(meeting: meeting, noteLines: 4, alignment: .center)
           .font(.system(size: 17))
           .frame(maxWidth: 760)
-        JoinButton(meeting: meeting, large: true, onJoin: onJoin)
+        JoinButton(meeting: meeting, size: .large, onJoin: onJoin)
           .keyboardShortcut(.defaultAction)
           .padding(.top, 8)
       }
@@ -335,7 +422,7 @@ private struct MeetingRow: View {
           .font(.system(size: 14))
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      JoinButton(meeting: meeting, large: false, onJoin: onJoin)
+      JoinButton(meeting: meeting, size: .regular, onJoin: onJoin)
     }
     .padding(.horizontal, 28)
     .padding(.vertical, 20)
@@ -345,9 +432,17 @@ private struct MeetingRow: View {
 }
 
 private struct JoinButton: View {
+  enum Size {
+    case large, regular, compact
+
+    var font: CGFloat { self == .large ? 26 : self == .regular ? 20 : 14 }
+    var horizontal: CGFloat { self == .large ? 56 : self == .regular ? 30 : 16 }
+    var vertical: CGFloat { self == .large ? 20 : self == .regular ? 14 : 8 }
+  }
+
   @Environment(\.cutinPalette) private var palette
   let meeting: Meeting
-  let large: Bool
+  let size: Size
   let onJoin: (Meeting) -> Void
 
   var body: some View {
@@ -358,9 +453,9 @@ private struct JoinButton: View {
         meeting.joinURL == nil ? "OK" : "Join",
         systemImage: meeting.joinURL == nil ? "checkmark" : "video.fill"
       )
-      .font(.system(size: large ? 26 : 20, weight: .bold))
-      .padding(.horizontal, large ? 56 : 30)
-      .padding(.vertical, large ? 20 : 14)
+      .font(.system(size: size.font, weight: .bold))
+      .padding(.horizontal, size.horizontal)
+      .padding(.vertical, size.vertical)
       .background(Capsule().fill(palette.accent))
       .foregroundStyle(palette.accentLabel)
       .contentShape(Capsule())
@@ -383,6 +478,7 @@ private enum CutinStyle {
 private struct HoldToDismissButton: View {
   @Environment(\.cutinPalette) private var palette
   let action: () -> Void
+  var showsEmergencyKey = true
   @State private var progress: CGFloat = 0
   private let holdDuration = 1.5
 
@@ -402,9 +498,11 @@ private struct HoldToDismissButton: View {
       Text("Hold to dismiss")
         .font(.system(size: 10))
         .foregroundStyle(palette.text.opacity(0.4))
-      Text("or press \(EmergencyKey.symbol)")
-        .font(.system(size: 10))
-        .foregroundStyle(palette.text.opacity(0.4))
+      if showsEmergencyKey {
+        Text("or press \(EmergencyKey.symbol)")
+          .font(.system(size: 10))
+          .foregroundStyle(palette.text.opacity(0.4))
+      }
     }
     .contentShape(Rectangle())
     .onLongPressGesture(

@@ -21,6 +21,9 @@ meetings because a notification banner is too easy to ignore.
 - **Interrupt for real.** A reminder that can be dismissed by reflex is not a
   reminder. The cut-in covers everything, on every display, and ending it
   without joining takes intent.
+- **Do not get in the way of a call.** A user already in a call is not the one
+  who forgot the meeting; covering their call, or the screen they share, only
+  hurts. They choose how much the cut-in interrupts them there.
 - **Joining is the easy path.** The largest target on the cut-in is the one
   that opens the meeting.
 - **Every account, one timeline.** Meetings from all accounts merge into one
