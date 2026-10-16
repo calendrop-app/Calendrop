@@ -43,17 +43,15 @@ public struct SharedConfig: Codable, Equatable, Sendable {
     appearance = (try? c.decodeIfPresent(CutinAppearance.self, forKey: .appearance)) ?? defaults.appearance
   }
 
-  /// Accepts the older list of bare addresses, and skips an entry it cannot read
-  /// rather than losing every account to one hand-edit gone wrong.
+  /// Skips an entry it cannot read rather than losing every account to one hand-edit
+  /// gone wrong.
   private static func decodeAccounts(from c: KeyedDecodingContainer<CodingKeys>) throws -> [AccountSettings] {
     guard c.contains(.accounts) else { return [] }
     var list = try c.nestedUnkeyedContainer(forKey: .accounts)
     var accounts: [AccountSettings] = []
     while !list.isAtEnd {
       let stored: StoredAccount?
-      if let email = try? list.decode(String.self) {
-        stored = StoredAccount(email: email)
-      } else if let entry = try? list.decode(StoredAccount.self) {
+      if let entry = try? list.decode(StoredAccount.self) {
         stored = entry
       } else {
         _ = try? list.decode(Skipped.self)

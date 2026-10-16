@@ -28,7 +28,7 @@ import Testing
 
   @Test func toleratesMissingAndUnknownKeys() throws {
     let url = try tempDir().appendingPathComponent("config.json")
-    try Data(#"{"accounts":["a@example.com"],"clientID":"left over","futureKey":1}"#.utf8).write(to: url)
+    try Data(#"{"accounts":[{"email":"a@example.com"}],"clientID":"left over","futureKey":1}"#.utf8).write(to: url)
     let config = ConfigStore(url: url).load()
     #expect(config.accounts.map(\.email) == ["a@example.com"])
     #expect(config.leadMinutes == 2)

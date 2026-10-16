@@ -1,15 +1,10 @@
 import Foundation
 
-/// Where the refresh tokens are kept: one item holding every account's token, and
-/// the per-account items older versions wrote.
+/// Where the refresh tokens are kept: one item holding every account's token.
 public protocol RefreshTokenStorage: AnyObject {
   /// The item's content, or nil when there is no item yet.
   func read() throws -> Data?
   func write(_ data: Data) throws
-  /// The accounts that still have an item of their own.
-  func legacyAccounts() throws -> [String]
-  func readLegacy(_ account: String) throws -> String?
-  func deleteLegacy(_ account: String) throws
 }
 
 public enum RefreshTokenStorageError: LocalizedError {
@@ -50,9 +45,6 @@ public final class RefreshTokenVault {
   }
 
   public func remove(_ account: String) throws {
-    // A per-account item left behind by a refused move goes too, or a later launch
-    // would bring it back.
-    try storage.deleteLegacy(account.lowercased())
     var next = try loaded(retrying: true)
     guard next.removeValue(forKey: account.lowercased()) != nil else { return }
     try save(next)
@@ -76,24 +68,8 @@ public final class RefreshTokenVault {
       throw RefreshTokenStorageError.refused
     }
     // Content that does not decode holds no token anyone can use.
-    var stored = data.flatMap { try? JSONDecoder().decode([String: String].self, from: $0) } ?? [:]
-    // A per-account item that cannot be read now stays, to be moved on a later launch.
-    var moved: [String] = []
-    for account in try storage.legacyAccounts() {
-      // An account the item already holds is not read again: each read may ask the user.
-      if stored[account.lowercased()] == nil {
-        // After one refusal the rest would only ask again.
-        guard let token = try? storage.readLegacy(account) else { break }
-        stored[account.lowercased()] = token
-      }
-      moved.append(account)
-    }
+    let stored = data.flatMap { try? JSONDecoder().decode([String: String].self, from: $0) } ?? [:]
     tokens = stored
-    // A move that cannot be written keeps the per-account items for a later launch;
-    // what was read still serves this one, so it is not read again.
-    if !moved.isEmpty, (try? save(stored)) != nil {
-      for account in moved { try? storage.deleteLegacy(account) }
-    }
     return stored
   }
 }
