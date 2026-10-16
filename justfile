@@ -46,6 +46,12 @@ bundle:
     mkdir -p {{ bundle }}/Contents/MacOS {{ bundle }}/Contents/Resources
     cp "$(swift build -c release --show-bin-path)/{{ app_name }}" {{ bundle }}/Contents/MacOS/{{ app_name }}
     cp Resources/Info.plist {{ bundle }}/Contents/Info.plist
+    # The version comes from the release tag, given as CALENDROP_VERSION, so it
+    # is never kept by hand; without it the bundle keeps Info.plist's 0.0.0.
+    if [[ -n "${CALENDROP_VERSION:-}" ]]; then \
+      plutil -replace CFBundleShortVersionString -string "$CALENDROP_VERSION" {{ bundle }}/Contents/Info.plist; \
+      plutil -replace CFBundleVersion -string "$CALENDROP_VERSION" {{ bundle }}/Contents/Info.plist; \
+    fi
     # The app icon Finder and the Dock show. At 32 pixels and below the plate holds
     # the logo drawn for small sizes, which stays legible.
     iconset="$(mktemp -d)/AppIcon.iconset"; mkdir -p "$iconset"; \
@@ -83,7 +89,7 @@ bundle:
 # intact; the name says the CPU, as a zip does not.
 package: bundle
     mkdir -p build/package
-    version="$(plutil -extract CFBundleShortVersionString raw Resources/Info.plist)"; \
+    version="$(plutil -extract CFBundleShortVersionString raw {{ bundle }}/Contents/Info.plist)"; \
     ditto -c -k --keepParent {{ bundle }} "build/package/{{ app_name }}-$version-macos-$(uname -m).zip"
 
 # Build the bundle and launch it.

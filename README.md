@@ -113,8 +113,9 @@ signature, it ties that answer to the build itself.
 
 ## Release
 
-Set the version in `Resources/Info.plist`, commit it as `release: vX.Y.Z`, then
-publish a GitHub release tagged `vX.Y.Z`. The Release workflow builds the app
+Publish a GitHub release tagged `vX.Y.Z`. The version comes from the tag alone:
+`Resources/Info.plist` keeps `0.0.0`, and the Release workflow writes `X.Y.Z`
+into the app it builds. The Release workflow builds the app
 from the tag, signed by "Calendrop Release" and with the Google OAuth client
 from the environment "release", and attaches the zip to the release. It then
 has [the site](https://calendrop-app.github.io/) rebuilt and the
