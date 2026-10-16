@@ -55,6 +55,13 @@ separate app for that, and for what MeetingBar 4.11 did not do for us:
 
 ## Install
 
+> [!WARNING]
+> Calendrop's Google sign-in is not yet open to everyone. Only Google accounts
+> that have been added in advance as test users can sign in to a release build;
+> any other account is refused by Google. Without that, you can still
+> [try Calendrop with sample accounts](#try-it-without-google), or
+> [build it with your own Google OAuth client](#building-with-google-sign-in).
+
 Requires macOS 14+ on Apple silicon. With [Homebrew](https://brew.sh/):
 
 ```sh
