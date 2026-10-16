@@ -1,12 +1,25 @@
-# Calendrop
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/calendrop-app/calendrop-brand/main/logo/calendrop-logo-vertical-dark.svg">
+    <img alt="Calendrop" src="https://raw.githubusercontent.com/calendrop-app/calendrop-brand/main/logo/calendrop-logo-vertical.svg" width="240">
+  </picture>
+</p>
+
+<p align="center">
+  <strong>Your next meeting, dropped over every screen.</strong>
+</p>
+
+<p align="center">
+  <a href="https://calendrop-app.github.io/">Website</a> ·
+  <a href="https://calendrop-app.github.io/privacy/">Privacy Policy</a> ·
+  <a href="https://calendrop-app.github.io/terms/">Terms of Service</a>
+</p>
 
 A macOS menu bar app that shows your next Google Calendar meeting and, shortly
 before it starts, **cuts in**: it covers every screen until you join the meeting
 or deliberately dismiss it.
 
-[Website](https://calendrop-app.github.io/) ·
-[Privacy Policy](https://calendrop-app.github.io/privacy/) ·
-[Terms of Service](https://calendrop-app.github.io/terms/)
+https://github.com/user-attachments/assets/3710b75f-57e9-44a7-be7e-d54129cfe9dc
 
 - Several Google accounts at once; an event you were invited to from more than
   one account appears once.
