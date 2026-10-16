@@ -124,7 +124,12 @@ final class AppModel: ObservableObject {
 
   /// Removes the account from every Mac (through the shared config) and drops what this Mac holds for it.
   func remove(account: String) {
-    source.forget(account)
+    // The account still leaves every Mac; the user is told this Mac kept its grant.
+    do {
+      try source.forget(account)
+    } catch {
+      lastError = "Could not remove this Mac's sign-in for \(account): \(error.localizedDescription)"
+    }
     accountStates[account] = nil
     calendars[account] = nil
     lastFetched[account] = nil
