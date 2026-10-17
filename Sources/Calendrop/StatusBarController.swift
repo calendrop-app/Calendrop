@@ -15,9 +15,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   private let model: AppModel
   private weak var actions: StatusBarActions?
   private static let titleLength = 24
-  /// "Wed, Oct 21". English like the rest of the menu, not the system language.
+  /// "Wed, Oct 21", in the language of the rest of the menu.
   private static let dayFormat = Date.FormatStyle.dateTime.weekday(.abbreviated).month(.abbreviated).day()
-    .locale(Locale(identifier: "en_US"))
 
   init(model: AppModel, actions: StatusBarActions) {
     self.model = model
@@ -32,7 +31,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
   func updateTitle(now: Date) {
     guard let button = item.button else { return }
-    let description = model.needsAttention ? "Calendrop, needs attention" : "Calendrop"
+    let description = model.needsAttention ? String(localized: "Calendrop, needs attention") : "Calendrop"
     if button.image?.accessibilityDescription != description {
       button.image = Self.icon(attention: model.needsAttention, description: description)
     }
@@ -59,7 +58,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
       menu.addItem(.separator())
     }
     if model.config.accounts.isEmpty {
-      menu.addItem(action("Add Google Account…", #selector(addAccount)))
+      menu.addItem(action(String(localized: "Add Google Account…"), #selector(addAccount)))
       menu.addItem(.separator())
     }
 
@@ -69,7 +68,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
       case .ok:
         continue
       case .needsSignIn:
-        let item = action("Sign In to \(account)…", #selector(signIn(_:)))
+        let item = action(String(localized: "Sign In to \(account)…"), #selector(signIn(_:)))
         item.representedObject = account
         item.image = NSImage(
           systemSymbolName: "person.crop.circle.badge.exclamationmark", accessibilityDescription: nil)
@@ -92,16 +91,19 @@ final class StatusBarController: NSObject, NSMenuDelegate {
       addSyncStatus(to: menu, now: now)
       menu.addItem(.separator())
     }
-    menu.addItem(action("Settings…", #selector(openSettings), key: ","))
+    menu.addItem(action(String(localized: "Settings…"), #selector(openSettings), key: ","))
     menu.addItem(.separator())
     menu.addItem(
-      NSMenuItem(title: "Quit Calendrop", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+      NSMenuItem(
+        title: String(localized: "Quit Calendrop"), action: #selector(NSApplication.terminate(_:)),
+        keyEquivalent: "q"))
   }
 
   private func addMeetings(to menu: NSMenu, now: Date) {
     let upcoming = model.meetings.filter { $0.end > now }
     guard !upcoming.isEmpty else {
-      let empty = NSMenuItem(title: "No more meetings today or tomorrow", action: nil, keyEquivalent: "")
+      let empty = NSMenuItem(
+        title: String(localized: "No more meetings today or tomorrow"), action: nil, keyEquivalent: "")
       empty.isEnabled = false
       menu.addItem(empty)
       addLookahead(to: menu, now: now)
@@ -112,7 +114,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     for day in byDay.keys.sorted() {
       let header =
         calendar.isDateInToday(day)
-        ? "Today" : calendar.isDateInTomorrow(day) ? "Tomorrow" : day.formatted(Self.dayFormat)
+        ? String(localized: "Today")
+        : calendar.isDateInTomorrow(day) ? String(localized: "Tomorrow") : day.formatted(Self.dayFormat)
       menu.addItem(.sectionHeader(title: header))
       for meeting in byDay[day]! {
         menu.addItem(menuItem(for: meeting, now: now))
@@ -124,12 +127,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   private func addLookahead(to menu: NSMenu, now: Date) {
     guard let lookahead = model.lookahead else { return }
     if let next = lookahead.next {
-      menu.addItem(.sectionHeader(title: "Next · \(next.start.formatted(Self.dayFormat))"))
+      let day = next.start.formatted(Self.dayFormat)
+      menu.addItem(.sectionHeader(title: String(localized: "Next · \(day)")))
       menu.addItem(menuItem(for: next, now: now))
     } else {
+      let day = lookahead.lastDay.formatted(Self.dayFormat)
       let none = NSMenuItem(
-        title: "Nothing scheduled through \(lookahead.lastDay.formatted(Self.dayFormat))", action: nil,
-        keyEquivalent: "")
+        title: String(localized: "Nothing scheduled through \(day)"), action: nil, keyEquivalent: "")
       none.isEnabled = false
       menu.addItem(none)
     }
@@ -138,12 +142,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   private func addSyncStatus(to menu: NSMenu, now: Date) {
     let title =
       model.isRefreshing
-      ? "Updating…" : SyncStatus.summary(calendars: model.calendarsRead, readAt: model.lastReadAt, now: now)
+      ? String(localized: "Updating…")
+      : SyncStatus.summary(calendars: model.calendarsRead, readAt: model.lastReadAt, now: now)
     let status = NSMenuItem(title: title, action: nil, keyEquivalent: "")
     status.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
     status.isEnabled = false
     menu.addItem(status)
-    menu.addItem(action("Refresh Now", #selector(refreshNow), key: "r"))
+    menu.addItem(action(String(localized: "Refresh Now"), #selector(refreshNow), key: "r"))
   }
 
   private func menuItem(for meeting: Meeting, now: Date) -> NSMenuItem {
@@ -160,7 +165,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     item.image = symbol(meeting.response == .accepted ? "\(shape).fill" : shape, colour: colour)
     if #available(macOS 14.4, *) {
       item.subtitle =
-        ([meeting.response.label, account?.displayName ?? meeting.account, meeting.calendarName] as [String?])
+        ([meeting.response.label(), account?.displayName ?? meeting.account, meeting.calendarName] as [String?])
         .compactMap { $0 }.joined(separator: " · ")
     }
     item.state = ongoing ? .mixed : .off
@@ -179,17 +184,17 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     menu.autoenablesItems = false
 
     if meeting.joinURL != nil {
-      let join = action("Join Meeting", #selector(join(_:)))
+      let join = action(String(localized: "Join Meeting"), #selector(join(_:)))
       join.representedObject = meeting
       join.image = NSImage(systemSymbolName: "video.fill", accessibilityDescription: nil)
       menu.addItem(join)
-      let copy = action("Copy Meeting Link", #selector(copyLink(_:)))
+      let copy = action(String(localized: "Copy Meeting Link"), #selector(copyLink(_:)))
       copy.representedObject = meeting
       copy.image = NSImage(systemSymbolName: "link", accessibilityDescription: nil)
       menu.addItem(copy)
     }
     if meeting.eventURL != nil {
-      let open = action("Open in Google Calendar", #selector(openEvent(_:)))
+      let open = action(String(localized: "Open in Google Calendar"), #selector(openEvent(_:)))
       open.representedObject = meeting
       open.image = NSImage(systemSymbolName: "calendar", accessibilityDescription: nil)
       menu.addItem(open)
@@ -199,20 +204,20 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     let span = meeting.end.timeIntervalSince(meeting.start)
     let range =
       "\(meeting.start.formatted(.dateTime.hour().minute())) – \(meeting.end.formatted(.dateTime.hour().minute()))"
-    menu.addItem(detail("\(range)  (\(Int(span / 60)) min)", symbol: "clock"))
+    menu.addItem(detail("\(range)  (\(String(localized: "\(Int(span / 60)) min")))", symbol: "clock"))
     let owner = detail("\(accountName) · \(meeting.calendarName)", symbol: "circle.fill")
     owner.image = symbol("circle.fill", colour: colour)
     menu.addItem(owner)
-    if let response = meeting.response.label {
+    if let response = meeting.response.label() {
       menu.addItem(detail(response, symbol: "questionmark.circle"))
     }
     if let location = meeting.location {
       menu.addItem(detail(location, symbol: "mappin.and.ellipse"))
     }
     if let organizer = meeting.organizer {
-      menu.addItem(detail("Organized by \(organizer)", symbol: "person.crop.circle"))
+      menu.addItem(detail(String(localized: "Organized by \(organizer)"), symbol: "person.crop.circle"))
     }
-    if let people = meeting.attendeeSummary {
+    if let people = meeting.attendeeSummary() {
       menu.addItem(detail(people, symbol: "person.2"))
     }
     if let notes = meeting.notes {

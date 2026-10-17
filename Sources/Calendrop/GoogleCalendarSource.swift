@@ -7,8 +7,9 @@ enum CalendarError: LocalizedError {
 
   var errorDescription: String? {
     switch self {
-    case .needsSignIn: "Sign-in required."
-    case .http(let code, let body): "Google Calendar API returned \(code): \(body.prefix(200))"
+    case .needsSignIn: String(localized: "Sign-in required.")
+    case .http(let code, let body):
+      String(localized: "Google Calendar API returned \(code): \(String(body.prefix(200)))")
     }
   }
 }

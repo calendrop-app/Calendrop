@@ -48,7 +48,7 @@ enum SettingsPage: String, Identifiable, Hashable {
 
   var id: String { rawValue }
 
-  var title: String {
+  var title: LocalizedStringKey {
     switch self {
     case .general: "General"
     case .appearance: "Appearance"
@@ -70,7 +70,7 @@ enum SettingsPage: String, Identifiable, Hashable {
 }
 
 extension CutinPresentation {
-  fileprivate var label: String {
+  fileprivate var label: LocalizedStringKey {
     switch self {
     case .fullScreen: "Full screen"
     case .compact: "Compact"
@@ -105,7 +105,7 @@ private struct GeneralPage: View {
             .frame(width: 48)
           Stepper("", value: lead, in: SharedConfig.leadMinutesRange)
             .labelsHidden()
-          Text(model.config.leadMinutes == 1 ? "minute" : "minutes")
+          Text(model.config.leadMinutes == 1 ? LocalizedStringKey("minute") : LocalizedStringKey("minutes"))
             .foregroundStyle(.secondary)
         }
         .help("0 shows the cut-in when the meeting starts.")
@@ -154,14 +154,54 @@ private struct GeneralPage: View {
           .disabled(model.config.cutInDuringCall == .fullScreen)
       }
     }
+    LanguageGroup()
   }
 
   private func minutes(_ n: Int) -> String {
-    n == 0 ? "At the start" : n == 1 ? "1 minute" : "\(n) minutes"
+    n == 0 ? String(localized: "At the start") : String(localized: "\(n) minutes")
   }
 
   private func binding<T>(_ keyPath: WritableKeyPath<SharedConfig, T>) -> Binding<T> {
     Binding(get: { model.config[keyPath: keyPath] }, set: { v in model.updateConfig { $0[keyPath: keyPath] = v } })
+  }
+}
+
+/// Kept on this Mac, not in the shared settings: each Mac shows its own language, as
+/// System Settings does.
+private struct LanguageGroup: View {
+  @State private var chosen = InterfaceLanguage.chosen
+
+  var body: some View {
+    SettingsGroup("Language") {
+      SettingsRow("Language", description: "The language of Calendrop's menu, cut-ins and settings on this Mac.") {
+        Picker(
+          "",
+          selection: Binding(
+            get: { chosen },
+            set: { language in
+              InterfaceLanguage.chosen = language
+              chosen = language
+            })
+        ) {
+          Text("Same as macOS").tag(String?.none)
+          ForEach(InterfaceLanguage.available, id: \.self) { language in
+            Text(verbatim: InterfaceLanguage.nativeName(language)).tag(String?.some(language))
+          }
+        }
+        .labelsHidden()
+        .fixedSize()
+      }
+    } footer: {
+      if InterfaceLanguage.atLaunch(choosing: chosen) != InterfaceLanguage.current {
+        HStack(spacing: 8) {
+          Text("Takes effect when Calendrop restarts.")
+            .foregroundStyle(.secondary)
+          if InterfaceLanguage.canRelaunch {
+            Button("Restart Now") { InterfaceLanguage.relaunch() }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -175,7 +215,7 @@ private struct SyncPage: View {
         "Accounts and settings live in the file below. On iCloud Drive it follows you to every Mac signed in to the same iCloud. Sign-in tokens never leave this Mac's Keychain, so each Mac signs in to each account once."
     ) {
       if let url = model.store.location {
-        SettingsRow("Settings file", description: url.path) {
+        SettingsRow(Text("Settings file"), description: Text(verbatim: url.path)) {
           Button("Show in Finder") {
             NSWorkspace.shared.activateFileViewerSelecting([url])
           }
@@ -192,7 +232,8 @@ private struct SyncPage: View {
 
 private struct AboutPage: View {
   private var version: String {
-    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development build"
+    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+      ?? String(localized: "development build")
   }
 
   var body: some View {
@@ -200,7 +241,7 @@ private struct AboutPage: View {
       Image(nsImage: NSApp.applicationIconImage)
         .resizable()
         .frame(width: 112, height: 112)
-      Text("Calendrop").font(.system(size: 28, weight: .bold))
+      Text(verbatim: "Calendrop").font(.system(size: 28, weight: .bold))
       Text("Version \(version)").foregroundStyle(.secondary)
       Text("Cuts in on every screen before your next meeting.")
         .padding(.top, 4)
@@ -209,12 +250,12 @@ private struct AboutPage: View {
     .padding(.vertical, 12)
 
     SettingsGroup("Links") {
-      SettingsRow("Source code", description: "github.com/calendrop-app/Calendrop") {
+      SettingsRow(Text("Source code"), description: Text(verbatim: "github.com/calendrop-app/Calendrop")) {
         Link("Open", destination: URL(string: "https://github.com/calendrop-app/Calendrop")!)
       }
     }
 
-    Text("Alisue · MIT License")
+    Text(verbatim: "Alisue · MIT License")
       .font(.callout)
       .foregroundStyle(.secondary)
       .frame(maxWidth: .infinity)
@@ -224,7 +265,7 @@ private struct AboutPage: View {
 // MARK: - Building blocks
 
 private struct SettingsPageView<Content: View>: View {
-  let title: String
+  let title: LocalizedStringKey
   @ViewBuilder let content: Content
 
   var body: some View {
@@ -250,13 +291,13 @@ private struct SettingsPageView<Content: View>: View {
 }
 
 struct SettingsGroup<Content: View, Footer: View>: View {
-  let title: String
-  let note: String?
+  let title: LocalizedStringKey
+  let note: LocalizedStringKey?
   @ViewBuilder let content: Content
   @ViewBuilder let footer: Footer
 
   init(
-    _ title: String, note: String? = nil, @ViewBuilder content: () -> Content,
+    _ title: LocalizedStringKey, note: LocalizedStringKey? = nil, @ViewBuilder content: () -> Content,
     @ViewBuilder footer: () -> Footer = { EmptyView() }
   ) {
     self.title = title
@@ -294,14 +335,14 @@ struct ResetLink {
 }
 
 struct SettingsRow<Control: View>: View {
-  let label: String
-  let description: String?
+  let label: Text
+  let description: Text?
   let descriptionColor: Color
   let reset: ResetLink?
   @ViewBuilder let control: Control
 
   init(
-    _ label: String, description: String? = nil, descriptionColor: Color = .secondary, reset: ResetLink? = nil,
+    _ label: Text, description: Text? = nil, descriptionColor: Color = .secondary, reset: ResetLink? = nil,
     @ViewBuilder control: () -> Control
   ) {
     self.label = label
@@ -309,6 +350,15 @@ struct SettingsRow<Control: View>: View {
     self.descriptionColor = descriptionColor
     self.reset = reset
     self.control = control()
+  }
+
+  init(
+    _ label: LocalizedStringKey, description: LocalizedStringKey? = nil, descriptionColor: Color = .secondary,
+    reset: ResetLink? = nil, @ViewBuilder control: () -> Control
+  ) {
+    self.init(
+      Text(label), description: description.map { Text($0) }, descriptionColor: descriptionColor, reset: reset,
+      control: control)
   }
 
   var body: some View {
@@ -322,9 +372,9 @@ struct SettingsRow<Control: View>: View {
     VStack(alignment: .trailing, spacing: 4) {
       HStack(alignment: .center, spacing: 16) {
         VStack(alignment: .leading, spacing: 2) {
-          Text(label)
+          label
           if let description {
-            Text(description)
+            description
               .font(.callout)
               .foregroundStyle(descriptionColor)
               .textSelection(.enabled)

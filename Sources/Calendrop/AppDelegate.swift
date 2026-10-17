@@ -153,7 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
       let window = NSWindow(
         contentViewController: NSHostingController(
           rootView: SettingsView(model: model, onTry: { [weak self] in self?.tryCutin($0, as: $1) })))
-      window.title = "Calendrop Settings"
+      window.title = String(localized: "Calendrop Settings")
       window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
       window.setContentSize(NSSize(width: 820, height: 560))
       window.contentMinSize = NSSize(width: 620, height: 420)

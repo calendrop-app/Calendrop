@@ -4,6 +4,14 @@
 <dict>
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
+  <!-- The languages Calendrop's own words are written in. Without them AppKit draws
+       the panels it supplies, such as the colour picker, in English whatever the
+       language, and System Settings offers no language for Calendrop alone. -->
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>ja</string>
+  </array>
   <key>CFBundleExecutable</key>
   <string>Calendrop</string>
   <key>CFBundleIconFile</key>
