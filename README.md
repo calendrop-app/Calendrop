@@ -74,7 +74,8 @@ and move Calendrop.app into /Applications. The app is self-signed, not
 notarized, so the first launch has to be allowed in System Settings › Privacy
 & Security.
 
-To build it yourself instead, with Swift 6 from Xcode or the Command Line Tools:
+To build it yourself instead, with Xcode (the Command Line Tools cannot compile
+its translations):
 
 ```sh
 just install   # build Calendrop.app and copy it into /Applications
@@ -164,11 +165,12 @@ release, through the tokens in the secrets `SITE_DISPATCH_TOKEN` and
 
 Enter the development shell with `nix develop` (or copy `.envrc.sample` to
 `.envrc` and `direnv allow`) for `just`, `nixfmt` and `rsvg-convert`. Swift itself comes from
-Xcode or the Command Line Tools. Then:
+Xcode. Then:
 
 ```sh
 just fmt   # format every source
-just ci    # everything CI runs: format check, warnings-as-errors build, tests
+just l10n  # add the strings the source uses to the String Catalogs
+just ci    # everything CI runs: format check, warnings-as-errors build, catalog check, tests
 just run   # build build/Calendrop.app and launch it
 ```
 

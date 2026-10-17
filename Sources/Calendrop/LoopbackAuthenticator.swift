@@ -12,12 +12,14 @@ enum AuthError: LocalizedError {
 
   var errorDescription: String? {
     switch self {
-    case .denied(let reason): "Google sign-in was cancelled (\(reason))."
-    case .timedOut: "Google sign-in timed out."
-    case .noRefreshToken: "Google did not return a refresh token."
+    case .denied(let reason): String(localized: "Google sign-in was cancelled (\(reason)).")
+    case .timedOut: String(localized: "Google sign-in timed out.")
+    case .noRefreshToken: String(localized: "Google did not return a refresh token.")
     case .calendarAccessNotGranted:
-      "Calendrop needs to see your calendars and their events. Sign in again and leave both permissions ticked."
-    case .tokenEndpoint(let message): "Google token endpoint: \(message)"
+      String(
+        localized:
+          "Calendrop needs to see your calendars and their events. Sign in again and leave both permissions ticked.")
+    case .tokenEndpoint(let message): String(localized: "Google token endpoint: \(message)")
     }
   }
 }
@@ -154,12 +156,15 @@ private final class LoopbackServer {
   private func respond(on connection: NWConnection, to request: LoopbackRequest) {
     let (status, message): (String, String) =
       switch request {
-      case .code: ("200 OK", "Signed in. You can close this tab and return to Calendrop.")
-      case .error: ("200 OK", "Sign-in was cancelled. You can close this tab.")
-      case .unrelated: ("404 Not Found", "Not found.")
+      case .code: ("200 OK", String(localized: "Signed in. You can close this tab and return to Calendrop."))
+      case .error: ("200 OK", String(localized: "Sign-in was cancelled. You can close this tab."))
+      case .unrelated: ("404 Not Found", String(localized: "Not found."))
       }
+    // The language tag lets the browser draw Japanese in Japanese glyphs rather than
+    // Chinese ones.
+    let language = Bundle.main.preferredLocalizations.first ?? "en"
     let html =
-      "<!doctype html><meta charset=utf-8><title>Calendrop</title>"
+      "<!doctype html><html lang=\(language)><meta charset=utf-8><title>Calendrop</title>"
       + "<body style=\"font:16px -apple-system,sans-serif;padding:4em;text-align:center\"><h2>\(message)</h2>"
     let response =
       "HTTP/1.1 \(status)\r\nContent-Type: text/html; charset=utf-8\r\n"

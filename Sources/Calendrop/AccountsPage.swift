@@ -26,7 +26,9 @@ struct AccountsPage: View {
         Button {
           Task { await model.refresh() }
         } label: {
-          Label(model.isRefreshing ? "Refreshing…" : "Refresh Now", systemImage: "arrow.clockwise")
+          Label(
+            model.isRefreshing ? LocalizedStringKey("Refreshing…") : LocalizedStringKey("Refresh Now"),
+            systemImage: "arrow.clockwise")
         }
         .disabled(model.isRefreshing || model.config.accounts.isEmpty)
         if model.isSigningIn {
@@ -87,11 +89,11 @@ private struct AccountSummaryRow: View {
   private var summary: String {
     var parts = [account.label == nil ? nil : account.email].compactMap { $0 }
     switch model.state(of: account.email) {
-    case .needsSignIn: parts.append("Sign-in required")
-    case .error: parts.append("Could not read calendars")
+    case .needsSignIn: parts.append(String(localized: "Sign-in required"))
+    case .error: parts.append(String(localized: "Could not read calendars"))
     case .ok:
       if let all = model.calendars[account.email], !all.isEmpty {
-        parts.append("\(all.filter(account.uses).count) of \(all.count) calendars")
+        parts.append(String(localized: "\(all.filter(account.uses).count) of \(all.count) calendars"))
       }
     }
     return parts.isEmpty ? account.email : parts.joined(separator: " · ")
@@ -168,7 +170,8 @@ private struct AccountGroup: View {
     if state != .ok {
       SettingsGroup("Sign-in") {
         SettingsRow(
-          "Sign-in", description: status(state), descriptionColor: state == .needsSignIn ? .orange : .red
+          Text("Sign-in"), description: Text(verbatim: status(state)),
+          descriptionColor: state == .needsSignIn ? .orange : .red
         ) {
           Button("Sign In…") { model.signIn(hint: account.email) }
         }
@@ -187,7 +190,7 @@ private struct AccountGroup: View {
   private func status(_ state: AppModel.AccountState) -> String {
     switch state {
     case .ok: ""
-    case .needsSignIn: "Sign-in required on this Mac"
+    case .needsSignIn: String(localized: "Sign-in required on this Mac")
     case .error(let message): message
     }
   }
@@ -206,8 +209,8 @@ private struct CalendarRows: View {
     } else {
       ForEach(all) { calendar in
         SettingsRow(
-          calendar.name,
-          description: calendar.isPrimary ? "Main calendar" : nil
+          Text(verbatim: calendar.name),
+          description: calendar.isPrimary ? Text("Main calendar") : nil
         ) {
           Toggle(
             "",

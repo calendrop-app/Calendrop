@@ -79,7 +79,8 @@ final class AppModel: ObservableObject {
     do {
       try store.save(next)
     } catch {
-      lastError = "Could not save \(store.location?.path ?? "settings"): \(error.localizedDescription)"
+      let target = store.location?.path ?? String(localized: "settings")
+      lastError = String(localized: "Could not save \(target): \(error.localizedDescription)")
     }
   }
 
@@ -139,7 +140,7 @@ final class AppModel: ObservableObject {
     do {
       try source.forget(account)
     } catch {
-      lastError = "Could not remove this Mac's sign-in for \(account): \(error.localizedDescription)"
+      lastError = String(localized: "Could not remove this Mac's sign-in for \(account): \(error.localizedDescription)")
     }
     accountStates[account] = nil
     calendars[account] = nil

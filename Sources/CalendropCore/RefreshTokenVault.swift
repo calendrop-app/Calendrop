@@ -12,7 +12,9 @@ public enum RefreshTokenStorageError: LocalizedError {
   case refused
 
   public var errorDescription: String? {
-    "Calendrop was not allowed to read its sign-in from the Keychain."
+    String(
+      localized: LocalizedStringResource(
+        "Calendrop was not allowed to read its sign-in from the Keychain.", bundle: .core))
   }
 }
 

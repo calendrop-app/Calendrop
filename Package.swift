@@ -3,12 +3,13 @@ import PackageDescription
 
 let package = Package(
   name: "Calendrop",
+  defaultLocalization: "en",
   platforms: [.macOS(.v14)],
   products: [
     .executable(name: "Calendrop", targets: ["Calendrop"])
   ],
   targets: [
-    .target(name: "CalendropCore"),
+    .target(name: "CalendropCore", resources: [.process("Localizable.xcstrings")]),
     .executableTarget(
       name: "Calendrop",
       dependencies: ["CalendropCore"],

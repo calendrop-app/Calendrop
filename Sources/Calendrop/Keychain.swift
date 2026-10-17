@@ -49,6 +49,7 @@ final class KeychainStorage: RefreshTokenStorage {
 struct KeychainError: LocalizedError {
   var status: OSStatus
   var errorDescription: String? {
-    "Keychain error: \(SecCopyErrorMessageString(status, nil) as String? ?? String(status))"
+    let message = SecCopyErrorMessageString(status, nil) as String? ?? String(status)
+    return String(localized: "Keychain error: \(message)")
   }
 }

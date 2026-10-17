@@ -29,8 +29,10 @@ final class SampleCalendarSource: CalendarSource {
   /// The sample schedule is laid out from launch so it stays put between refreshes.
   private let startedAt = Date()
 
-  let notice: String? =
-    "This build of Calendrop has no Google sign-in, so its accounts are samples with sample calendars and meetings. Add Account adds more. Nothing is saved; they are forgotten when Calendrop quits."
+  let notice: String? = String(
+    localized:
+      "This build of Calendrop has no Google sign-in, so its accounts are samples with sample calendars and meetings. Add Account adds more. Nothing is saved; they are forgotten when Calendrop quits."
+  )
 
   var presetAccounts: [(email: String, label: String?)] { SampleCalendar.presetAccounts }
 
