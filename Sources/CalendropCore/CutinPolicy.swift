@@ -78,8 +78,8 @@ public enum Countdown {
   /// Compact form for the menu bar: "in 12m", "in 2h 5m", "now".
   public static func short(_ interval: TimeInterval) -> String {
     if interval <= 0 { return "now" }
-    let minutes = Int(interval / 60)
-    if minutes < 1 { return "in <1m" }
+    if interval < 60 { return "in <1m" }
+    let minutes = Int((interval / 60).rounded(.up))
     let (h, m) = minutes.quotientAndRemainder(dividingBy: 60)
     switch (h, m) {
     case (0, _): return "in \(m)m"

@@ -204,9 +204,15 @@ private func meeting(
       (0, "now"),
       (-30, "now"),
       (20, "in <1m"),
+      (59.9, "in <1m"),
       (60, "in 1m"),
-      (3599, "in 59m"),
+      (60.1, "in 2m"),
+      (119.9, "in 2m"),
+      (120, "in 2m"),
+      (120.1, "in 3m"),
+      (3599, "in 1h"),
       (3600, "in 1h"),
+      (3600.1, "in 1h 1m"),
       (7500, "in 2h 5m"),
     ] as [(Double, String)])
   func formatsInterval(seconds: Double, expected: String) {
