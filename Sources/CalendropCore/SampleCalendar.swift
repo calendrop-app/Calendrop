@@ -18,14 +18,16 @@ public enum SampleCalendar {
     case withoutLink
     case manyScripts
 
-    public var title: String {
-      switch self {
-      case .single: "Single Meeting"
-      case .simultaneous: "Meetings at the Same Time"
-      case .closeTogether: "Meetings Close Together"
-      case .withoutLink: "Meeting Without a Video Link"
-      case .manyScripts: "Titles in Many Scripts"
-      }
+    public func title(locale: Locale = .current) -> String {
+      let title =
+        switch self {
+        case .single: LocalizedStringResource("Single Meeting", locale: locale, bundle: .core)
+        case .simultaneous: LocalizedStringResource("Meetings at the Same Time", locale: locale, bundle: .core)
+        case .closeTogether: LocalizedStringResource("Meetings Close Together", locale: locale, bundle: .core)
+        case .withoutLink: LocalizedStringResource("Meeting Without a Video Link", locale: locale, bundle: .core)
+        case .manyScripts: LocalizedStringResource("Titles in Many Scripts", locale: locale, bundle: .core)
+        }
+      return String(localized: title)
     }
 
     public func meetings(now: Date, leadTime: TimeInterval) -> [Meeting] {

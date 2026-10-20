@@ -99,14 +99,16 @@ public struct CutinTheme: Codable, Equatable, Sendable {
 public enum CutinPreset: String, CaseIterable, Codable, Sendable {
   case midnight, daylight, sunset, ocean, monochrome
 
-  public var title: String {
-    switch self {
-    case .midnight: "Midnight"
-    case .daylight: "Daylight"
-    case .sunset: "Sunset"
-    case .ocean: "Ocean"
-    case .monochrome: "Monochrome"
-    }
+  public func title(locale: Locale = .current) -> String {
+    let title =
+      switch self {
+      case .midnight: LocalizedStringResource("Midnight", locale: locale, bundle: .core)
+      case .daylight: LocalizedStringResource("Daylight", locale: locale, bundle: .core)
+      case .sunset: LocalizedStringResource("Sunset", locale: locale, bundle: .core)
+      case .ocean: LocalizedStringResource("Ocean", locale: locale, bundle: .core)
+      case .monochrome: LocalizedStringResource("Monochrome", locale: locale, bundle: .core)
+      }
+    return String(localized: title)
   }
 
   public var theme: CutinTheme {

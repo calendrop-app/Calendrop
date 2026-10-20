@@ -201,22 +201,23 @@ private func meeting(
 @Suite struct CountdownTests {
   @Test(
     arguments: [
-      (0, "now"),
-      (-30, "now"),
-      (20, "in <1m"),
-      (59.9, "in <1m"),
-      (60, "in 1m"),
-      (60.1, "in 2m"),
-      (119.9, "in 2m"),
-      (120, "in 2m"),
-      (120.1, "in 3m"),
-      (3599, "in 1h"),
-      (3600, "in 1h"),
-      (3600.1, "in 1h 1m"),
-      (7500, "in 2h 5m"),
-    ] as [(Double, String)])
-  func formatsInterval(seconds: Double, expected: String) {
-    #expect(Countdown.short(seconds) == expected)
+      (0, "now", "進行中"),
+      (-30, "now", "進行中"),
+      (20, "in <1m", "1分以内"),
+      (59.9, "in <1m", "1分以内"),
+      (60, "in 1m", "1分後"),
+      (60.1, "in 2m", "2分後"),
+      (119.9, "in 2m", "2分後"),
+      (120, "in 2m", "2分後"),
+      (120.1, "in 3m", "3分後"),
+      (3599, "in 1h", "1時間後"),
+      (3600, "in 1h", "1時間後"),
+      (3600.1, "in 1h 1m", "1時間1分後"),
+      (7500, "in 2h 5m", "2時間5分後"),
+    ] as [(Double, String, String)])
+  func formatsInterval(seconds: Double, english: String, japanese: String) {
+    #expect(Countdown.short(seconds, locale: Locale(identifier: "en")) == english)
+    #expect(Countdown.short(seconds, locale: Locale(identifier: "ja")) == japanese)
   }
 
   @Test(

@@ -1,12 +1,25 @@
-# Calendrop
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/calendrop-app/calendrop-brand/main/logo/calendrop-logo-vertical-dark.svg">
+    <img alt="Calendrop" src="https://raw.githubusercontent.com/calendrop-app/calendrop-brand/main/logo/calendrop-logo-vertical.svg" width="240">
+  </picture>
+</p>
+
+<p align="center">
+  <strong>Your next meeting, dropped over every screen.</strong>
+</p>
+
+<p align="center">
+  <a href="https://calendrop-app.github.io/">Website</a> ·
+  <a href="https://calendrop-app.github.io/privacy/">Privacy Policy</a> ·
+  <a href="https://calendrop-app.github.io/terms/">Terms of Service</a>
+</p>
 
 A macOS menu bar app that shows your next Google Calendar meeting and, shortly
 before it starts, **cuts in**: it covers every screen until you join the meeting
 or deliberately dismiss it.
 
-[Website](https://calendrop-app.github.io/) ·
-[Privacy Policy](https://calendrop-app.github.io/privacy/) ·
-[Terms of Service](https://calendrop-app.github.io/terms/)
+https://github.com/user-attachments/assets/3710b75f-57e9-44a7-be7e-d54129cfe9dc
 
 - Several Google accounts at once; an event you were invited to from more than
   one account appears once.
@@ -23,7 +36,31 @@ or deliberately dismiss it.
   (Control-Option-Command-Escape) dismisses it too. Escape alone and ⌘W do
   nothing.
 
+## Inspired by MeetingBar
+
+Calendrop is strongly inspired by [MeetingBar](https://github.com/leits/MeetingBar),
+a menu bar app that keeps your next meeting in sight and joins it in one click.
+
+The difference is where the full-screen reminder sits. In MeetingBar it is one
+reminder among several: off by default, next to the macOS notifications, with
+little to adjust. In Calendrop the cut-in is the app itself, and everything else
+is there to make it hard to miss and easy to act on. Calendrop was built as a
+separate app for that, and for what MeetingBar 4.11 did not do for us:
+
+- Its Google Calendar connection takes one Google account. Calendrop reads
+  several at once and merges them into one timeline.
+- Its full-screen reminder appears on one display, and could be left off-screen
+  and impossible to close when that display was unplugged. Calendrop's cut-in
+  covers every display and is rebuilt whenever the screens change.
+
 ## Install
+
+> [!WARNING]
+> Calendrop's Google sign-in is not yet open to everyone. Only Google accounts
+> that have been added in advance as test users can sign in to a release build;
+> any other account is refused by Google. Without that, you can still
+> [try Calendrop with sample accounts](#try-it-without-google), or
+> [build it with your own Google OAuth client](#building-with-google-sign-in).
 
 Requires macOS 14+ on Apple silicon. With [Homebrew](https://brew.sh/):
 
@@ -37,7 +74,8 @@ and move Calendrop.app into /Applications. The app is self-signed, not
 notarized, so the first launch has to be allowed in System Settings › Privacy
 & Security.
 
-To build it yourself instead, with Swift 6 from Xcode or the Command Line Tools:
+To build it yourself instead, with Xcode (the Command Line Tools cannot compile
+its translations):
 
 ```sh
 just install   # build Calendrop.app and copy it into /Applications
@@ -113,8 +151,9 @@ signature, it ties that answer to the build itself.
 
 ## Release
 
-Set the version in `Resources/Info.plist`, commit it as `release: vX.Y.Z`, then
-publish a GitHub release tagged `vX.Y.Z`. The Release workflow builds the app
+Publish a GitHub release tagged `vX.Y.Z`. The version comes from the tag alone:
+`Resources/Info.plist` keeps `0.0.0`, and the Release workflow writes `X.Y.Z`
+into the app it builds. The Release workflow builds the app
 from the tag, signed by "Calendrop Release" and with the Google OAuth client
 from the environment "release", and attaches the zip to the release. It then
 has [the site](https://calendrop-app.github.io/) rebuilt and the
@@ -126,11 +165,12 @@ release, through the tokens in the secrets `SITE_DISPATCH_TOKEN` and
 
 Enter the development shell with `nix develop` (or copy `.envrc.sample` to
 `.envrc` and `direnv allow`) for `just`, `nixfmt` and `rsvg-convert`. Swift itself comes from
-Xcode or the Command Line Tools. Then:
+Xcode. Then:
 
 ```sh
 just fmt   # format every source
-just ci    # everything CI runs: format check, warnings-as-errors build, tests
+just l10n  # add the strings the source uses to the String Catalogs
+just ci    # everything CI runs: format check, warnings-as-errors build, catalog check, tests
 just run   # build build/Calendrop.app and launch it
 ```
 

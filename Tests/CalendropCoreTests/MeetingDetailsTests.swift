@@ -80,34 +80,36 @@ import Testing
 }
 
 @Suite struct AttendeeSummaryTests {
-  private func summary(_ names: [String]) -> String? {
+  private func summary(_ names: [String], _ language: String) -> String? {
     Meeting(
       uid: "u", title: "t", start: .now, end: .now, joinURL: nil, htmlLink: nil, account: "a", calendarName: "c",
       attendees: names
-    ).attendeeSummary
+    ).attendeeSummary(locale: Locale(identifier: language))
   }
 
   @Test(
     arguments: [
-      ([], nil),
-      (["Aki"], "With Aki"),
-      (["Aki", "Ken", "Lee"], "With Aki, Ken, Lee"),
-      (["Aki", "Ken", "Lee", "Rin"], "With Aki, Ken, Lee and 1 other"),
-      (["Aki", "Ken", "Lee", "Rin", "Mika"], "With Aki, Ken, Lee and 2 others"),
-    ] as [([String], String?)])
-  func namesTheFirstFewAndCountsTheRest(names: [String], expected: String?) {
-    #expect(summary(names) == expected)
+      ([], nil, nil),
+      (["Aki"], "With Aki", "参加者: Aki"),
+      (["Aki", "Ken", "Lee"], "With Aki, Ken, Lee", "参加者: Aki、Ken、Lee"),
+      (["Aki", "Ken", "Lee", "Rin"], "With Aki, Ken, Lee and 1 other", "参加者: Aki、Ken、Lee ほか1名"),
+      (["Aki", "Ken", "Lee", "Rin", "Mika"], "With Aki, Ken, Lee and 2 others", "参加者: Aki、Ken、Lee ほか2名"),
+    ] as [([String], String?, String?)])
+  func namesTheFirstFewAndCountsTheRest(names: [String], english: String?, japanese: String?) {
+    #expect(summary(names, "en") == english)
+    #expect(summary(names, "ja") == japanese)
   }
 }
 
 @Suite struct ResponseLabelTests {
   @Test(
     arguments: [
-      (Meeting.Response.accepted, nil),
-      (.tentative, "Maybe"),
-      (.unanswered, "Not answered"),
-    ] as [(Meeting.Response, String?)])
-  func marksOnlyMeetingsNotAccepted(response: Meeting.Response, expected: String?) {
-    #expect(response.label == expected)
+      (Meeting.Response.accepted, nil, nil),
+      (.tentative, "Maybe", "未定"),
+      (.unanswered, "Not answered", "未回答"),
+    ] as [(Meeting.Response, String?, String?)])
+  func marksOnlyMeetingsNotAccepted(response: Meeting.Response, english: String?, japanese: String?) {
+    #expect(response.label(locale: Locale(identifier: "en")) == english)
+    #expect(response.label(locale: Locale(identifier: "ja")) == japanese)
   }
 }

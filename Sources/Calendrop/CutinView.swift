@@ -132,10 +132,14 @@ private struct CompactMeetingRow: View {
       VStack(alignment: .leading, spacing: 4) {
         TimelineView(.periodic(from: .now, by: 1)) { context in
           let remaining = meeting.start.timeIntervalSince(context.date)
-          Text(remaining > 0 ? "Starts in \(Countdown.clock(remaining))" : "Started \(Countdown.clock(-remaining)) ago")
-            .font(.system(size: 13, weight: .bold))
-            .monospacedDigit()
-            .foregroundStyle(remaining > 0 ? palette.text : palette.late)
+          Text(
+            remaining > 0
+              ? String(localized: "Starts in \(Countdown.clock(remaining))")
+              : String(localized: "Started \(Countdown.clock(-remaining)) ago")
+          )
+          .font(.system(size: 13, weight: .bold))
+          .monospacedDigit()
+          .foregroundStyle(remaining > 0 ? palette.text : palette.late)
         }
         Text(meeting.title)
           .font(.system(size: 15, weight: .semibold))
@@ -197,7 +201,7 @@ private struct MeetingDetails: View {
     VStack(alignment: alignment, spacing: 6) {
       let facts = [
         meeting.location.map { ("mappin.and.ellipse", $0) },
-        meeting.attendeeSummary.map { ("person.2", $0) },
+        meeting.attendeeSummary().map { ("person.2", $0) },
       ].compactMap { $0 }
       if !facts.isEmpty {
         HStack(spacing: 18) {
@@ -229,7 +233,7 @@ private struct AccountBadge: View {
       Circle()
         .fill(account.map { Color($0.color) } ?? palette.text.opacity(0.4))
         .frame(width: 10, height: 10)
-      Text("\(account?.displayName ?? meeting.account) · \(meeting.calendarName)")
+      Text(verbatim: "\(account?.displayName ?? meeting.account) · \(meeting.calendarName)")
         .foregroundStyle(palette.text.opacity(0.6))
         .lineLimit(1)
     }
@@ -242,7 +246,7 @@ private struct ResponseBadge: View {
   @Environment(\.cutinPalette) private var palette
 
   var body: some View {
-    if let label = meeting.response.label {
+    if let label = meeting.response.label() {
       Text(label)
         .padding(.horizontal, 8)
         .padding(.vertical, 2)
@@ -303,13 +307,16 @@ private struct SingleMeetingView: View {
       TimelineView(.periodic(from: .now, by: 1)) { context in
         let remaining = meeting.start.timeIntervalSince(context.date)
         VStack(spacing: 4) {
-          Text(remaining > 0 ? "Meeting starts in" : "Meeting started")
+          Text(remaining > 0 ? LocalizedStringKey("Meeting starts in") : LocalizedStringKey("Meeting started"))
             .font(.system(size: 28, weight: .medium))
             .foregroundStyle(palette.text.opacity(0.7))
-          Text(remaining > 0 ? Countdown.clock(remaining) : "\(Countdown.clock(-remaining)) ago")
-            .font(.system(size: 120, weight: .bold))
-            .monospacedDigit()
-            .foregroundStyle(remaining > 0 ? palette.text : palette.late)
+          Text(
+            remaining > 0
+              ? Countdown.clock(remaining) : String(localized: "\(Countdown.clock(-remaining)) ago")
+          )
+          .font(.system(size: 120, weight: .bold))
+          .monospacedDigit()
+          .foregroundStyle(remaining > 0 ? palette.text : palette.late)
         }
       }
       VStack(spacing: 14) {
@@ -350,12 +357,12 @@ private struct MeetingChoiceView: View {
   var body: some View {
     VStack(spacing: 36) {
       VStack(spacing: 10) {
-        Text(hasConflict ? "Meetings overlap" : "Meetings close together")
+        Text(hasConflict ? LocalizedStringKey("Meetings overlap") : LocalizedStringKey("Meetings close together"))
           .font(.system(size: 52, weight: .bold))
         Text(
           hasConflict
-            ? "Choose the one to join. The ones overlapping it are skipped."
-            : "Join the first one. The next will cut in again before it starts."
+            ? LocalizedStringKey("Choose the one to join. The ones overlapping it are skipped.")
+            : LocalizedStringKey("Join the first one. The next will cut in again before it starts.")
         )
         .font(.system(size: 20))
         .foregroundStyle(palette.text.opacity(0.65))
@@ -392,10 +399,14 @@ private struct MeetingRow: View {
       TimelineView(.periodic(from: .now, by: 1)) { context in
         let remaining = meeting.start.timeIntervalSince(context.date)
         VStack(alignment: .leading, spacing: 4) {
-          Text(remaining > 0 ? "in \(Countdown.clock(remaining))" : "\(Countdown.clock(-remaining)) ago")
-            .font(.system(size: 30, weight: .bold))
-            .monospacedDigit()
-            .foregroundStyle(remaining > 0 ? palette.text : palette.late)
+          Text(
+            remaining > 0
+              ? String(localized: "in \(Countdown.clock(remaining))")
+              : String(localized: "\(Countdown.clock(-remaining)) ago")
+          )
+          .font(.system(size: 30, weight: .bold))
+          .monospacedDigit()
+          .foregroundStyle(remaining > 0 ? palette.text : palette.late)
           Text(CutinStyle.timeRange(meeting))
             .font(.system(size: 15))
             .foregroundStyle(palette.text.opacity(0.6))
@@ -450,7 +461,7 @@ private struct JoinButton: View {
       onJoin(meeting)
     } label: {
       Label(
-        meeting.joinURL == nil ? "OK" : "Join",
+        meeting.joinURL == nil ? LocalizedStringKey("OK") : LocalizedStringKey("Join"),
         systemImage: meeting.joinURL == nil ? "checkmark" : "video.fill"
       )
       .font(.system(size: size.font, weight: .bold))

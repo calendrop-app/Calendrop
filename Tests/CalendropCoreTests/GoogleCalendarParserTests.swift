@@ -4,10 +4,11 @@ import Testing
 @testable import CalendropCore
 
 @Suite struct GoogleCalendarParserTests {
-  private func parse(_ json: String) throws -> [Meeting] {
+  private func parse(_ json: String, language: String = "en") throws -> [Meeting] {
     try GoogleCalendarParser.meetings(
       fromEvents: Data(json.utf8), account: "me@example.com",
-      calendar: CalendarRef(id: "work-calendar", name: "Work", isPrimary: true))
+      calendar: CalendarRef(id: "work-calendar", name: "Work", isPrimary: true),
+      locale: Locale(identifier: language))
   }
 
   @Test func parsesTimedEvent() throws {
@@ -43,12 +44,13 @@ import Testing
     #expect(meetings.first?.start == Date(timeIntervalSince1970: 1_792_112_400))
   }
 
-  @Test func usesPlaceholderForMissingTitle() throws {
+  @Test(arguments: [("en", "(No title)"), ("ja", "（タイトルなし）")])
+  func usesPlaceholderForMissingTitle(language: String, placeholder: String) throws {
     let meetings = try parse(
       """
       {"items":[{"id":"e1","start":{"dateTime":"2026-10-16T01:00:00Z"},"end":{"dateTime":"2026-10-16T01:30:00Z"}}]}
-      """)
-    #expect(meetings.first?.title == "(No title)")
+      """, language: language)
+    #expect(meetings.first?.title == placeholder)
     #expect(meetings.first?.uid == "e1")
   }
 

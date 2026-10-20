@@ -21,6 +21,17 @@ final class AppModel: ObservableObject {
   let store: any ConfigStorage
   private let source: CalendarSource
   @Published private(set) var isRefreshing = false
+  /// When every account was last read without an error, and how many calendars that read.
+  @Published private(set) var lastReadAt: Date?
+  @Published private(set) var calendarsRead = 0
+  /// What lies past tomorrow, searched only when nothing is left before it.
+  struct Lookahead {
+    /// The first meeting found, if any.
+    var next: Meeting?
+    /// The last day searched.
+    var lastDay: Date
+  }
+  @Published private(set) var lookahead: Lookahead?
   private var refreshAgain = false
   /// Each account's meetings as last fetched, before merging, so an offline refresh can
   /// re-apply a changed calendar choice without losing copies merged away.
@@ -68,7 +79,8 @@ final class AppModel: ObservableObject {
     do {
       try store.save(next)
     } catch {
-      lastError = "Could not save \(store.location?.path ?? "settings"): \(error.localizedDescription)"
+      let target = store.location?.path ?? String(localized: "settings")
+      lastError = String(localized: "Could not save \(target): \(error.localizedDescription)")
     }
   }
 
@@ -128,7 +140,7 @@ final class AppModel: ObservableObject {
     do {
       try source.forget(account)
     } catch {
-      lastError = "Could not remove this Mac's sign-in for \(account): \(error.localizedDescription)"
+      lastError = String(localized: "Could not remove this Mac's sign-in for \(account): \(error.localizedDescription)")
     }
     accountStates[account] = nil
     calendars[account] = nil
@@ -155,19 +167,20 @@ final class AppModel: ObservableObject {
     }
 
     reloadConfigFromDisk()
-    let day = Calendar.current
-    let from = day.startOfDay(for: Date())
-    let to = day.date(byAdding: .day, value: 2, to: from)!
+    let window = ReadWindow(now: Date())
 
     var lists: [[Meeting]] = []
     var states: [String: AccountState] = [:]
     var fetchedCalendars: [String: [CalendarRef]] = [:]
+    var usedCalendars: [String: [CalendarRef]] = [:]
     for account in config.accounts {
       do {
         let all = try await source.calendars(account: account.email)
         fetchedCalendars[account.email] = all
         let used = all.filter(account.uses)
-        let fetched = try await source.meetings(account: account.email, calendars: used, from: from, to: to)
+        let fetched = try await source.meetings(
+          account: account.email, calendars: used, from: window.from, to: window.to)
+        usedCalendars[account.email] = used
         lastFetched[account.email] = fetched
         lists.append(fetched)
         states[account.email] = .ok
@@ -187,6 +200,31 @@ final class AppModel: ObservableObject {
     meetings = Meeting.merge(lists.map { $0.filter { current.contains($0.account) } })
     calendars = fetchedCalendars.filter { current.contains($0.key) }
     accountStates = states.filter { current.contains($0.key) }
+    // An account added while the fetch was in flight has not been read yet.
+    let readAll = !config.accounts.isEmpty && config.accounts.allSatisfy { accountStates[$0.email] == .ok }
+    if readAll {
+      lastReadAt = Date()
+      calendarsRead = usedCalendars.values.map(\.count).reduce(0, +)
+    }
+    lookahead =
+      readAll && window.needsLookahead(after: meetings, now: Date())
+      ? await lookAhead(past: window, on: usedCalendars) : nil
+  }
+
+  /// Searches past `window` for the next meeting. Nil when an account cannot be
+  /// searched, since a meeting it holds might come first.
+  private func lookAhead(past window: ReadWindow, on calendars: [String: [CalendarRef]]) async -> Lookahead? {
+    var found: [[Meeting]] = []
+    for (account, used) in calendars {
+      guard
+        let meetings = try? await source.meetings(
+          account: account, calendars: used, from: window.to, to: window.lookaheadEnd)
+      else { return nil }
+      found.append(meetings)
+    }
+    let current = Set(config.accounts.map(\.email))
+    let next = window.firstAfter(Meeting.merge(found).filter { current.contains($0.account) })
+    return Lookahead(next: next, lastDay: window.lastLookaheadDay)
   }
 
   // MARK: Acknowledgements

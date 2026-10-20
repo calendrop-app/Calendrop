@@ -19,7 +19,11 @@ public enum GoogleCalendarParser {
   /// Event types that occupy the calendar but are not something to join.
   private static let ignoredEventTypes: Set<String> = ["outOfOffice", "focusTime", "workingLocation", "birthday"]
 
-  public static func meetings(fromEvents data: Data, account: String, calendar: CalendarRef) throws -> [Meeting] {
+  /// An event without a title is named in `locale`'s language, as Google Calendar does.
+  public static func meetings(
+    fromEvents data: Data, account: String, calendar: CalendarRef, locale: Locale = .current
+  ) throws -> [Meeting] {
+    let untitled = String(localized: LocalizedStringResource("(No title)", locale: locale, bundle: .core))
     let response = try JSONDecoder().decode(EventsResponse.self, from: data)
     return response.items.compactMap { event in
       guard event.status != "cancelled",
@@ -39,7 +43,7 @@ public enum GoogleCalendarParser {
         .compactMap(\.uri)
       return Meeting(
         uid: event.iCalUID ?? event.id,
-        title: event.summary.flatMap { $0.isEmpty ? nil : $0 } ?? "(No title)",
+        title: event.summary.flatMap { $0.isEmpty ? nil : $0 } ?? untitled,
         start: start,
         end: end,
         joinURL: JoinURLExtractor.extract(

@@ -4,12 +4,20 @@
 <dict>
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
+  <!-- The languages Calendrop's own words are written in. Without them AppKit draws
+       the panels it supplies, such as the colour picker, in English whatever the
+       language, and System Settings offers no language for Calendrop alone. -->
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>ja</string>
+  </array>
   <key>CFBundleExecutable</key>
   <string>Calendrop</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
-  <string>com.lambdalisue.calendrop</string>
+  <string>io.github.calendrop-app.calendrop</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
@@ -17,9 +25,9 @@
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.2.1</string>
+  <string>0.0.0</string>
   <key>CFBundleVersion</key>
-  <string>3</string>
+  <string>0.0.0</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>LSUIElement</key>

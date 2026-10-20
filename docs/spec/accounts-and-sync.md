@@ -20,12 +20,22 @@ between the user's Macs.
 - Google Meet links and Google Calendar event pages open as the account the
   meeting came from, even when the browser defaults to another Google account.
 - When macOS asks whether Calendrop may use its Keychain, it asks once for all
-  accounts, and at most once per launch. The exception is the first launch after
-  updating from a version that kept one grant per account: it asks once for each
-  of those grants, and stops at the first one turned down.
+  accounts, and at most once per launch.
 - An account whose grant is missing or revoked is shown as needing sign-in;
   its meetings disappear until it is signed in again. When the network is
   unavailable, the meetings last fetched are kept.
+
+## Staying current
+
+- Calendrop reads today's and tomorrow's meetings, and reads them again every
+  few minutes, when the Mac wakes, and when the user asks from the menu.
+- The menu says how many calendars it read and how long ago every account was
+  last read, so an empty list can be told apart from one that was never read.
+  When nothing is left today or tomorrow, the menu says so in those words.
+- When nothing is left today or tomorrow, Calendrop also looks further ahead
+  and shows the first meeting it finds there, or the last day it looked
+  through. It does neither while an account cannot be read, since that
+  account might hold an earlier meeting.
 
 ## Shared configuration
 
@@ -53,8 +63,7 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 | `color` | string | `#RRGGBB`; a colour not yet used by another account when missing |
 | `calendarIDs` | array of strings | Google Calendar IDs to read; when missing, the account's main calendar only |
 
-An entry may also be a bare address string, as older versions wrote. An entry
-that cannot be read is skipped without affecting the others.
+An entry that cannot be read is skipped without affecting the others.
 
 `appearance` holds:
 

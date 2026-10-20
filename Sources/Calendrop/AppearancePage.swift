@@ -2,7 +2,7 @@ import CalendropCore
 import SwiftUI
 
 extension CompactPosition {
-  fileprivate var label: String {
+  fileprivate var label: LocalizedStringKey {
     switch self {
     case .topLeading: "Top Left"
     case .top: "Top Center"
@@ -27,11 +27,11 @@ struct AppearancePage: View {
     SettingsGroup("Style", note: "Applies to every cut-in, on every Mac that shares these settings.") {
       LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 12)], spacing: 12) {
         ForEach(CutinPreset.allCases, id: \.self) { preset in
-          StyleCard(title: preset.title, theme: preset.theme, selected: appearance.style == .preset(preset)) {
+          StyleCard(title: preset.title(), theme: preset.theme, selected: appearance.style == .preset(preset)) {
             model.updateConfig { $0.appearance.style = .preset(preset) }
           }
         }
-        StyleCard(title: "Custom", theme: appearance.custom, selected: appearance.style == .custom) {
+        StyleCard(title: String(localized: "Custom"), theme: appearance.custom, selected: appearance.style == .custom) {
           model.updateConfig { $0.appearance.style = .custom }
         }
       }
@@ -41,7 +41,7 @@ struct AppearancePage: View {
     SettingsGroup("Preview") {
       VStack(alignment: .leading, spacing: 12) {
         Picker("", selection: $previewScenario) {
-          ForEach(SampleCalendar.Scenario.allCases, id: \.self) { Text($0.title).tag($0) }
+          ForEach(SampleCalendar.Scenario.allCases, id: \.self) { Text(verbatim: $0.title()).tag($0) }
         }
         .pickerStyle(.menu)
         .labelsHidden()
@@ -184,7 +184,7 @@ private struct StyleCard: View {
           LinearGradient(
             colors: [Color(theme.backgroundTop), Color(theme.backgroundBottom)], startPoint: .top, endPoint: .bottom)
           VStack(spacing: 6) {
-            Text("1:30")
+            Text(verbatim: "1:30")
               .font(.system(size: 20, weight: .bold))
               .fontDesign(theme.fontDesign.swiftUI)
               .foregroundStyle(Color(theme.text))
@@ -237,7 +237,7 @@ private struct CutinMiniature: View {
 }
 
 extension CutinFontDesign {
-  var title: String {
+  var title: LocalizedStringKey {
     switch self {
     case .standard: "Standard"
     case .rounded: "Rounded"

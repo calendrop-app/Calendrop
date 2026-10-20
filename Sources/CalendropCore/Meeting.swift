@@ -29,12 +29,14 @@ public struct Meeting: Identifiable, Hashable, Sendable {
     public static func < (a: Response, b: Response) -> Bool { a.rawValue < b.rawValue }
 
     /// What marks a meeting not yet accepted; nil for an accepted one, which needs no mark.
-    public var label: String? {
-      switch self {
-      case .accepted: nil
-      case .tentative: "Maybe"
-      case .unanswered: "Not answered"
-      }
+    public func label(locale: Locale = .current) -> String? {
+      let label: LocalizedStringResource? =
+        switch self {
+        case .accepted: nil
+        case .tentative: LocalizedStringResource("Maybe", locale: locale, bundle: .core)
+        case .unanswered: LocalizedStringResource("Not answered", locale: locale, bundle: .core)
+        }
+      return label.map { String(localized: $0) }
     }
   }
 
@@ -93,11 +95,20 @@ public struct Meeting: Identifiable, Hashable, Sendable {
   private static let googleHosts: Set<String> = ["meet.google.com", "calendar.google.com", "www.google.com"]
 
   /// "With Aki, Ken, Lee and 2 others", or nil when nobody else is invited.
-  public var attendeeSummary: String? {
+  public func attendeeSummary(locale: Locale = .current) -> String? {
     guard !attendees.isEmpty else { return nil }
-    let shown = attendees.prefix(3).joined(separator: ", ")
+    // ListFormatter would add "and" before the last name, which reads wrong when
+    // more names follow.
+    let separator = String(
+      localized: LocalizedStringResource(
+        "attendee-separator", defaultValue: ", ", locale: locale, bundle: .core,
+        comment: "Between the names of the people invited to a meeting."))
+    let shown = attendees.prefix(3).joined(separator: separator)
     let rest = attendees.count - 3
-    return rest > 0 ? "With \(shown) and \(rest) other\(rest == 1 ? "" : "s")" : "With \(shown)"
+    return String(
+      localized: rest > 0
+        ? LocalizedStringResource("With \(shown) and \(rest) others", locale: locale, bundle: .core)
+        : LocalizedStringResource("With \(shown)", locale: locale, bundle: .core))
   }
 
   public func overlaps(_ other: Meeting) -> Bool {
