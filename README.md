@@ -40,7 +40,7 @@ notarized, so the first launch has to be allowed in System Settings › Privacy
 To build it yourself instead, with Swift 6 from Xcode or the Command Line Tools:
 
 ```sh
-just install   # build Calendrop.app and copy it into /Applications
+just install-macos   # build Calendrop.app and copy it into /Applications
 ```
 
 ## Try it without Google
@@ -72,10 +72,10 @@ once:
 3. Create an **OAuth client ID** of type **Desktop app**.
 
 Then pass its ID and secret to the build through the environment; `just
-bundle` (and `just run`, `just install`) embed them:
+bundle` (and `just run`, `just install-macos`) embed them:
 
 ```sh
-CALENDROP_GOOGLE_CLIENT_ID=… CALENDROP_GOOGLE_CLIENT_SECRET=… just install
+CALENDROP_GOOGLE_CLIENT_ID=… CALENDROP_GOOGLE_CLIENT_SECRET=… just install-macos
 ```
 
 Keep them out of the repository — for example in a password manager whose CLI

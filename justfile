@@ -99,6 +99,8 @@ import-identity:
     scripts/import-identity.sh
 
 # Copy the bundle into /Applications.
-install: bundle
+install-macos: bundle
     rm -rf /Applications/{{ app_name }}.app
     cp -R {{ bundle }} /Applications/{{ app_name }}.app
+
+alias install := install-macos
