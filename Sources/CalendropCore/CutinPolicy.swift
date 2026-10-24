@@ -77,12 +77,12 @@ public struct CutinPolicy: Sendable {
 public enum Countdown {
   /// Compact form for the menu bar: "in 12m", "in 2h 5m", "now".
   public static func short(_ interval: TimeInterval, locale: Locale = .current) -> String {
-    let minutes = Int(interval / 60)
+    let minutes = Int((interval / 60).rounded(.up))
     let (h, m) = minutes.quotientAndRemainder(dividingBy: 60)
     let text =
       if interval <= 0 {
         LocalizedStringResource("now", locale: locale, bundle: .core)
-      } else if minutes < 1 {
+      } else if interval < 60 {
         LocalizedStringResource("in <1m", locale: locale, bundle: .core)
       } else if h == 0 {
         LocalizedStringResource("in \(m)m", locale: locale, bundle: .core)

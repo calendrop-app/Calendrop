@@ -204,9 +204,15 @@ private func meeting(
       (0, "now", "進行中"),
       (-30, "now", "進行中"),
       (20, "in <1m", "1分以内"),
+      (59.9, "in <1m", "1分以内"),
       (60, "in 1m", "1分後"),
-      (3599, "in 59m", "59分後"),
+      (60.1, "in 2m", "2分後"),
+      (119.9, "in 2m", "2分後"),
+      (120, "in 2m", "2分後"),
+      (120.1, "in 3m", "3分後"),
+      (3599, "in 1h", "1時間後"),
       (3600, "in 1h", "1時間後"),
+      (3600.1, "in 1h 1m", "1時間1分後"),
       (7500, "in 2h 5m", "2時間5分後"),
     ] as [(Double, String, String)])
   func formatsInterval(seconds: Double, english: String, japanese: String) {
