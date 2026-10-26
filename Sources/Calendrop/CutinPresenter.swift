@@ -7,7 +7,7 @@ import SwiftUI
 /// Full screen, it is one window per `NSScreen`. Whenever the set of screens or their
 /// frames change — a display unplugged, a resolution switched, the lid closed — the
 /// windows are rebuilt to match, so no screen is ever left uncovered or half-covered.
-/// Compact, it is one panel in a corner of the main screen that never takes focus
+/// Compact, it is one panel per screen that never takes focus
 /// from the call; hidden, it holds the meetings with nothing on screen.
 @MainActor
 final class CutinPresenter {
@@ -27,7 +27,8 @@ final class CutinPresenter {
   var compactPosition = CompactPosition.top {
     didSet { if compactPosition != oldValue, presentation == .compact, isShowing { rebuild() } }
   }
-  private var windows: [NSWindow] = []
+  private(set) var windows: [NSWindow] = []
+  private let screens: () -> [NSScreen]
   /// The screens the windows were built for, to notice when they change.
   private var screenFrames: [CGRect] = []
   private var observers: [NSObjectProtocol] = []
@@ -37,7 +38,8 @@ final class CutinPresenter {
   var isShowing: Bool { !meetings.isEmpty }
   private var isCovering: Bool { isShowing && presentation == .fullScreen }
 
-  init() {
+  init(screens: @escaping () -> [NSScreen] = { NSScreen.screens }) {
+    self.screens = screens
     keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
       let keyCode = event.keyCode
       let modifiers = EmergencyKey.Modifiers(rawValue: event.modifierFlags.rawValue)
@@ -87,7 +89,7 @@ final class CutinPresenter {
   /// the notification before `NSScreen.screens` settles, and the tick catches that.
   func syncWithScreens(force: Bool) {
     guard isShowing else { return }
-    if force || NSScreen.screens.map(\.frame) != screenFrames {
+    if force || screens().map(\.frame) != screenFrames {
       rebuild()
     } else {
       bringToFront()
@@ -98,20 +100,19 @@ final class CutinPresenter {
   /// already there, for a display or style change, must not replay the entrance.
   private func rebuild(dropsIn: Bool = false) {
     for window in windows { window.orderOut(nil) }
-    screenFrames = NSScreen.screens.map(\.frame)
+    let screens = screens()
+    screenFrames = screens.map(\.frame)
     switch presentation {
     case .fullScreen:
-      windows = NSScreen.screens.map { makeWindow(for: $0, dropsIn: dropsIn) }
+      windows = screens.map { makeWindow(for: $0, dropsIn: dropsIn) }
       bringToFront()
     case .compact:
-      guard let screen = NSScreen.main ?? NSScreen.screens.first else {
-        windows = []
-        return
-      }
-      let (panel, settled) = makePanel(on: screen, slidesIn: dropsIn)
-      windows = [panel]
+      let panels = screens.map { makePanel(on: $0, slidesIn: dropsIn) }
+      windows = panels.map { $0.0 }
       bringToFront()
-      if dropsIn { slide(panel, to: settled) }
+      if dropsIn {
+        for (panel, settled) in panels { slide(panel, to: settled) }
+      }
     case .hidden:
       windows = []
     }
