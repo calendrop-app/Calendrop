@@ -1,6 +1,6 @@
 import CoreGraphics
 
-/// Where on the main screen the compact cut-in card sits.
+/// Where on each screen the compact cut-in card sits.
 public enum CompactPosition: String, Codable, CaseIterable, Sendable {
   case topLeading, top, topTrailing
   case bottomLeading, bottom, bottomTrailing

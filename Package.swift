@@ -15,5 +15,6 @@ let package = Package(
       swiftSettings: [.swiftLanguageMode(.v5)]
     ),
     .testTarget(name: "CalendropCoreTests", dependencies: ["CalendropCore"]),
+    .testTarget(name: "CalendropTests", dependencies: ["Calendrop"]),
   ]
 )

@@ -37,7 +37,7 @@ While any app uses the microphone or the camera, the user counts as in a call,
 and a cut-in that comes due then takes the form chosen in settings:
 
 - full screen, as at any other time;
-- compact: a card on the main screen, at the top centre unless the user picked
+- compact: a card on every screen, at the top centre unless the user picked
   another edge or corner, clear of the menu bar and the Dock, with the same join buttons
   and the same press-and-hold to dismiss, that never takes the keyboard from
   the call;
@@ -52,8 +52,8 @@ stays so when a call starts.
 ## What it covers
 
 - Every connected display, above full-screen apps, the Dock and the menu bar,
-  on every Space. The compact card shows above full-screen apps on every Space,
-  on the main display only.
+  on every Space. Compact cards also appear on every display and Space, above
+  full-screen apps.
 - When displays are connected, disconnected or change resolution, the cut-in
   is rebuilt to cover exactly the screens that exist now.
 
