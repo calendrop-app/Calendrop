@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # Every action this repository's workflows use, moved to its newest release.
+  # A release is taken only after it has been out a week, long enough for a
+  # compromised one to be found and pulled.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    # One pull request a week for all of them, as they are checked together by
+    # the same CI run.
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: deps
+
+  # The nixpkgs the development shell comes from (flake.lock), with the same
+  # cooldown as the actions.
+  - package-ecosystem: nix
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: deps

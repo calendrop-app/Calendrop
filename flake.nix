@@ -2,7 +2,9 @@
   description = "A macOS menu bar app that cuts in on every screen before your next Google Calendar meeting";
 
   inputs = {
-    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
+    # A GitHub input, as Dependabot updates only GitHub, GitLab, Sourcehut
+    # and git inputs, not the channel tarball.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
   outputs =

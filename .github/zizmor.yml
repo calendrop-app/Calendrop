@@ -1,0 +1,7 @@
+# Actions are pinned to their tags, which Dependabot (dependabot.yml) moves
+# to each release; a commit hash would hide the version being run.
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": ref-pin
