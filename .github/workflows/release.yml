@@ -10,13 +10,15 @@ permissions:
 
 jobs:
   package:
-    uses: ./.github/workflows/package.yml
+    # $/ reads the workflow from this commit, never from files a step left in
+    # the workspace.
+    uses: $/.github/workflows/package.yml
     with:
       sign: true
       tag: ${{ github.event.release.tag_name }}
     # A called workflow reads the secrets of the environment "release" only
     # when they are inherited; they cannot be passed by name.
-    secrets: inherit
+    secrets: inherit # zizmor: ignore[secrets-inherit]
 
   upload:
     needs: package

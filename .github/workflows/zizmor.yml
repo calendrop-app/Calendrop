@@ -1,0 +1,31 @@
+name: zizmor
+
+# Audits the workflows for security weaknesses: injectable expressions, leaked
+# credentials, excessive permissions, and actions with known vulnerabilities.
+# The weekly run catches advisories published after a workflow last changed.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 1"
+
+concurrency:
+  group: zizmor-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  zizmor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Findings fail the job instead of going to code scanning, so a pull
+      # request cannot merge with one.
+      - uses: zizmorcore/zizmor-action@v0.8.0
+        with:
+          advanced-security: false
