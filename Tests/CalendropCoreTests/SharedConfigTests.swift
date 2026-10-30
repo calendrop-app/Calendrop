@@ -86,6 +86,24 @@ import Testing
     #expect(config.cutInDuringCall == SharedConfig().cutInDuringCall)
   }
 
+  @Test func showsNoCalendarInTheMenuByDefault() throws {
+    #expect(SharedConfig().menuCalendar == .hidden)
+    let older = try JSONDecoder().decode(SharedConfig.self, from: Data("{}".utf8))
+    #expect(older.menuCalendar == .hidden)
+  }
+
+  @Test func roundTripsTheMenuCalendar() throws {
+    var config = SharedConfig()
+    config.menuCalendar = .week
+    let decoded = try JSONDecoder().decode(SharedConfig.self, from: JSONEncoder().encode(config))
+    #expect(decoded.menuCalendar == .week)
+  }
+
+  @Test func readsAnUnknownMenuCalendarAsTheDefault() throws {
+    let config = try JSONDecoder().decode(SharedConfig.self, from: Data(#"{"menuCalendar":"year"}"#.utf8))
+    #expect(config.menuCalendar == .hidden)
+  }
+
   @Test func neverStoresTokensOrClientCredentials() throws {
     let encoded = String(decoding: try JSONEncoder().encode(SharedConfig()), as: UTF8.self).lowercased()
     #expect(!encoded.contains("token"))

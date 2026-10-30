@@ -32,6 +32,10 @@ final class AppModel: ObservableObject {
     var lastDay: Date
   }
   @Published private(set) var lookahead: Lookahead?
+  /// The meetings of the days the menu's calendar shows, read only while it shows them.
+  @Published private(set) var periodRead: PeriodRead?
+  @Published private(set) var isReadingPeriod = false
+  private var periodTask: Task<Void, Never>?
   private var refreshAgain = false
   /// Each account's meetings as last fetched, before merging, so an offline refresh can
   /// re-apply a changed calendar choice without losing copies merged away.
@@ -225,6 +229,48 @@ final class AppModel: ObservableObject {
     let current = Set(config.accounts.map(\.email))
     let next = window.firstAfter(Meeting.merge(found).filter { current.contains($0.account) })
     return Lookahead(next: next, lastDay: window.lastLookaheadDay)
+  }
+
+  /// Reads the meetings of `interval` for the menu's calendar, replacing a read still
+  /// in flight for another one. A failed read leaves the last one in place, so the
+  /// days it does not cover read as unknown rather than as empty.
+  func readPeriod(_ interval: DateInterval) {
+    periodTask?.cancel()
+    isReadingPeriod = true
+    periodTask = Task {
+      var lists: [[Meeting]] = []
+      for account in config.accounts where state(of: account.email) == .ok {
+        do {
+          let all: [CalendarRef]
+          if let known = calendars[account.email] {
+            all = known
+          } else {
+            all = try await source.calendars(account: account.email)
+          }
+          lists.append(
+            try await source.meetings(
+              account: account.email, calendars: all.filter(account.uses), from: interval.start, to: interval.end))
+        } catch {
+          guard !Task.isCancelled else { return }
+          isReadingPeriod = false
+          return
+        }
+      }
+      guard !Task.isCancelled else { return }
+      let current = Set(config.accounts.map(\.email))
+      periodRead = PeriodRead(
+        interval: interval, meetings: Meeting.merge(lists.map { $0.filter { current.contains($0.account) } }))
+      isReadingPeriod = false
+    }
+  }
+
+  /// Drops what was read for the menu's calendar once the menu closes, so the next
+  /// opening shows its days as loading until they are read again, not as they were.
+  func endPeriodRead() {
+    periodTask?.cancel()
+    periodTask = nil
+    periodRead = nil
+    isReadingPeriod = false
   }
 
   // MARK: Acknowledgements

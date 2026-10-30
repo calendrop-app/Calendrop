@@ -54,6 +54,7 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 | `cutInWithoutAcceptance` | boolean | `true` | Whether meetings answered "maybe" to, or not answered, cut in too |
 | `appearance` | object | the Midnight preset | How the cut-in looks; see below |
 | `showMeetingTitleInMenuBar` | boolean | `true` | Whether the menu bar shows the meeting title alongside the countdown |
+| `menuCalendar` | string | `hidden` | The calendar above the menu's meetings: `month`, `week`, or `hidden` for none; an unrecognised value counts as `hidden` |
 
 `accounts` holds one object per account:
 
