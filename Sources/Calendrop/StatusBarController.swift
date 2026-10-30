@@ -82,7 +82,18 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     if needsSeparator { menu.addItem(.separator()) }
 
     addMeetings(to: menu, now: now)
+    addFooter(to: menu, now: now)
+  }
 
+  private func dayTitle(_ day: Date) -> String {
+    let calendar = Calendar.current
+    return calendar.isDateInToday(day)
+      ? String(localized: "Today")
+      : calendar.isDateInTomorrow(day) ? String(localized: "Tomorrow") : day.formatted(Self.dayFormat)
+  }
+
+  /// How current the meetings are, then settings and quitting.
+  private func addFooter(to menu: NSMenu, now: Date) {
     menu.addItem(.separator())
     if !model.config.accounts.isEmpty {
       addSyncStatus(to: menu, now: now)
@@ -109,11 +120,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     let calendar = Calendar.current
     let byDay = Dictionary(grouping: upcoming) { calendar.startOfDay(for: $0.start) }
     for day in byDay.keys.sorted() {
-      let header =
-        calendar.isDateInToday(day)
-        ? String(localized: "Today")
-        : calendar.isDateInTomorrow(day) ? String(localized: "Tomorrow") : day.formatted(Self.dayFormat)
-      menu.addItem(.sectionHeader(title: header))
+      menu.addItem(.sectionHeader(title: dayTitle(day)))
       for meeting in byDay[day]! {
         menu.addItem(menuItem(for: meeting, now: now))
       }
