@@ -10,6 +10,21 @@ import Testing
     return dir
   }
 
+  @Test func showsMenuBarTitlesForNewAndExistingConfigurations() throws {
+    #expect(SharedConfig().showMeetingTitleInMenuBar)
+    let older = try JSONDecoder().decode(SharedConfig.self, from: Data("{}".utf8))
+    #expect(older.showMeetingTitleInMenuBar)
+  }
+
+  @Test(arguments: [true, false])
+  func persistsMenuBarTitleVisibility(shown: Bool) throws {
+    let store = ConfigStore(url: try tempDir().appendingPathComponent("config.json"))
+    var config = SharedConfig()
+    config.showMeetingTitleInMenuBar = shown
+    try store.save(config)
+    #expect(store.load().showMeetingTitleInMenuBar == shown)
+  }
+
   @Test func missingFileYieldsDefaults() throws {
     let store = ConfigStore(url: try tempDir().appendingPathComponent("nested/config.json"))
     #expect(store.load() == SharedConfig())
@@ -69,6 +84,24 @@ import Testing
   @Test func readsAnUnknownCutInDuringACallAsTheDefault() throws {
     let config = try JSONDecoder().decode(SharedConfig.self, from: Data(#"{"cutInDuringCall":"sideways"}"#.utf8))
     #expect(config.cutInDuringCall == SharedConfig().cutInDuringCall)
+  }
+
+  @Test func showsNoCalendarInTheMenuByDefault() throws {
+    #expect(SharedConfig().menuCalendar == .hidden)
+    let older = try JSONDecoder().decode(SharedConfig.self, from: Data("{}".utf8))
+    #expect(older.menuCalendar == .hidden)
+  }
+
+  @Test func roundTripsTheMenuCalendar() throws {
+    var config = SharedConfig()
+    config.menuCalendar = .week
+    let decoded = try JSONDecoder().decode(SharedConfig.self, from: JSONEncoder().encode(config))
+    #expect(decoded.menuCalendar == .week)
+  }
+
+  @Test func readsAnUnknownMenuCalendarAsTheDefault() throws {
+    let config = try JSONDecoder().decode(SharedConfig.self, from: Data(#"{"menuCalendar":"year"}"#.utf8))
+    #expect(config.menuCalendar == .hidden)
   }
 
   @Test func neverStoresTokensOrClientCredentials() throws {

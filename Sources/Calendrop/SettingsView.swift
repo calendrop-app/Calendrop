@@ -79,12 +79,46 @@ extension CutinPresentation {
   }
 }
 
+extension MenuCalendarMode {
+  fileprivate var label: LocalizedStringKey {
+    switch self {
+    case .month: "Month"
+    case .week: "Week"
+    case .hidden: "Don't show"
+    }
+  }
+}
+
 // MARK: - Pages
 
 private struct GeneralPage: View {
   @ObservedObject var model: AppModel
 
   var body: some View {
+    SettingsGroup("Menu bar") {
+      SettingsRow(
+        "Show meeting title",
+        description: "When off, the icon and countdown stay visible."
+      ) {
+        Toggle("Show meeting title", isOn: binding(\.showMeetingTitleInMenuBar))
+          .toggleStyle(.switch)
+          .labelsHidden()
+      }
+      SettingsRow(
+        "Calendar",
+        description:
+          "Shows a month or a week above the meetings when you click the menu bar icon. Choosing a day lists its meetings."
+      ) {
+        Picker("", selection: binding(\.menuCalendar)) {
+          ForEach([MenuCalendarMode.month, .week, .hidden], id: \.self) { mode in
+            Text(mode.label).tag(mode)
+          }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+      }
+    }
     SettingsGroup("Cut-in") {
       SettingsRow(
         "Show before a meeting",

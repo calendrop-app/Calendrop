@@ -258,6 +258,16 @@
         }
       }
     },
+    "Calendar" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カレンダー"
+          }
+        }
+      }
+    },
     "Calendar choice" : {
       "localizations" : {
         "ja" : {
@@ -404,6 +414,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "カレンダーを読み込めませんでした"
+          }
+        }
+      }
+    },
+    "Could not read this day's meetings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この日の会議を読み込めませんでした"
           }
         }
       }
@@ -776,6 +796,16 @@
         }
       }
     },
+    "Loading…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込み中…"
+          }
+        }
+      }
+    },
     "Lower lets the screen underneath show through." : {
       "localizations" : {
         "ja" : {
@@ -856,6 +886,16 @@
         }
       }
     },
+    "Menu bar" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メニューバー"
+          }
+        }
+      }
+    },
     "Mono" : {
       "localizations" : {
         "ja" : {
@@ -866,12 +906,42 @@
         }
       }
     },
+    "Month" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "月"
+          }
+        }
+      }
+    },
     "Motion" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "動き"
+          }
+        }
+      }
+    },
+    "Next Month" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次の月"
+          }
+        }
+      }
+    },
+    "Next Week" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次の週"
           }
         }
       }
@@ -892,6 +962,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "アカウントがありません"
+          }
+        }
+      }
+    },
+    "No meetings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会議はありません"
           }
         }
       }
@@ -1032,6 +1112,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "割り込みのプレビュー"
+          }
+        }
+      }
+    },
+    "Previous Month" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前の月"
+          }
+        }
+      }
+    },
+    "Previous Week" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前の週"
           }
         }
       }
@@ -1216,12 +1316,32 @@
         }
       }
     },
+    "Show meeting title" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会議のタイトルを表示"
+          }
+        }
+      }
+    },
     "Shown in the menu and on the cut-in instead of the address." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "メニューと割り込みで、アドレスの代わりに表示します。"
+          }
+        }
+      }
+    },
+    "Shows a month or a week above the meetings when you click the menu bar icon. Choosing a day lists its meetings." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メニューバーのアイコンをクリックしたとき、会議の上に月または週のカレンダーを表示します。日付を選ぶと、その日の会議を一覧にします。"
           }
         }
       }
@@ -1586,12 +1706,32 @@
         }
       }
     },
+    "Week" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週"
+          }
+        }
+      }
+    },
     "When off, the cut-in appears at once; the compact card, which otherwise slides in from the nearer edge, too. With Reduce Motion on in System Settings, both fade in instead." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "オフにすると割り込みはすぐに現れます。ふだんは近い端から滑り込むコンパクトカードも同様です。システム設定で「視差効果を減らす」がオンのときは、どちらもフェードインします。"
+          }
+        }
+      }
+    },
+    "When off, the icon and countdown stay visible." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフにしても、アイコンと開始までの残り時間は表示されます。"
           }
         }
       }

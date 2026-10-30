@@ -1,5 +1,7 @@
 import AppKit
 import CalendropCore
+import Combine
+import SwiftUI
 
 @MainActor
 protocol StatusBarActions: AnyObject {
@@ -14,9 +16,11 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
   private let model: AppModel
   private weak var actions: StatusBarActions?
-  private static let titleLength = 24
   /// "Wed, Oct 21", in the language of the rest of the menu.
   private static let dayFormat = Date.FormatStyle.dateTime.weekday(.abbreviated).month(.abbreviated).day()
+  /// The calendar at the top of the open menu, when the settings ask for one.
+  private var calendar: (state: MenuCalendarState, item: NSMenuItem)?
+  private var calendarUpdates: Set<AnyCancellable> = []
 
   init(model: AppModel, actions: StatusBarActions) {
     self.model = model
@@ -35,12 +39,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     if button.image?.accessibilityDescription != description {
       button.image = Self.icon(attention: model.needsAttention, description: description)
     }
-    if let next = model.policy.nextMeeting(in: model.meetings, now: now) {
-      let title = Countdown.truncate(next.title, to: Self.titleLength)
-      button.title = " \(title) · \(Countdown.short(next.start.timeIntervalSince(now)))"
-    } else {
-      button.title = ""
-    }
+    let label = MenuBarLabel.text(
+      meeting: model.policy.nextMeeting(in: model.meetings, now: now),
+      now: now, showTitle: model.config.showMeetingTitleInMenuBar)
+    button.title = label.map { " \($0)" } ?? ""
   }
 
   // MARK: NSMenuDelegate
@@ -84,8 +86,125 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     }
     if needsSeparator { menu.addItem(.separator()) }
 
-    addMeetings(to: menu, now: now)
+    if let span = model.config.menuCalendar.span {
+      addCalendar(span, to: menu, now: now)
+    } else {
+      calendar = nil
+      addMeetings(to: menu, now: now)
+    }
+    addFooter(to: menu, now: now)
+  }
 
+  func menuDidClose(_ menu: NSMenu) {
+    calendarUpdates.removeAll()
+    calendar = nil
+    model.endPeriodRead()
+  }
+
+  // MARK: Calendar
+
+  /// The calendar, opened on today, and the selected day's meetings under it.
+  private func addCalendar(_ span: MenuCalendar.Span, to menu: NSMenu, now: Date) {
+    let state = MenuCalendarState(calendar: MenuCalendar(span: span), today: now)
+    let hosting = NSHostingView(rootView: MenuCalendarView(state: state))
+    hosting.frame.size = NSSize(width: max(hosting.fittingSize.width, 280), height: hosting.fittingSize.height)
+    hosting.autoresizingMask = [.width]
+    let item = NSMenuItem()
+    item.view = hosting
+    menu.addItem(item)
+    calendar = (state, item)
+    addSelectedDay(to: menu, now: now)
+    updateColours(now: now)
+
+    // Delivered through the main queue, which runs while the menu tracks the mouse;
+    // the main run loop's default mode does not.
+    calendarUpdates.removeAll()
+    state.$selection.dropFirst().receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in self?.selectionChanged() }
+      .store(in: &calendarUpdates)
+    model.$periodRead.combineLatest(model.$isReadingPeriod, model.$meetings).dropFirst()
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        let now = Date()
+        self?.updateColours(now: now)
+        self?.replaceSelectedDay(now: now)
+      }
+      .store(in: &calendarUpdates)
+    model.readPeriod(state.calendar.interval(showing: state.selection))
+  }
+
+  private func selectionChanged() {
+    guard let state = calendar?.state else { return }
+    let interval = state.calendar.interval(showing: state.selection)
+    if model.periodRead?.interval != interval {
+      model.readPeriod(interval)
+    }
+    let now = Date()
+    updateColours(now: now)
+    replaceSelectedDay(now: now)
+  }
+
+  private func meetings(on day: Date, in state: MenuCalendarState, now: Date) -> [Meeting]? {
+    state.calendar.meetings(
+      on: day, refreshed: model.meetings, window: ReadWindow(now: now), period: model.periodRead)
+  }
+
+  private func updateColours(now: Date) {
+    guard let state = calendar?.state else { return }
+    var colours: [Date: [Color]] = [:]
+    for day in state.days {
+      guard let meetings = meetings(on: day, in: state, now: now) else { continue }
+      let accounts = Set(meetings.map(\.account))
+      colours[day] = model.config.accounts.filter { accounts.contains($0.email) }.map { Color($0.color) }
+    }
+    state.colours = colours
+  }
+
+  /// The selected day's meetings, all of them, ended ones included, as a calendar lists a day.
+  private func addSelectedDay(to menu: NSMenu, now: Date) {
+    guard let state = calendar?.state else { return }
+    menu.addItem(.separator())
+    menu.addItem(.sectionHeader(title: dayTitle(state.selection)))
+    guard let meetings = meetings(on: state.selection, in: state, now: now) else {
+      let title =
+        model.isReadingPeriod ? String(localized: "Loading…") : String(localized: "Could not read this day's meetings")
+      let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+      item.isEnabled = false
+      menu.addItem(item)
+      return
+    }
+    guard !meetings.isEmpty else {
+      let empty = NSMenuItem(title: String(localized: "No meetings"), action: nil, keyEquivalent: "")
+      empty.isEnabled = false
+      menu.addItem(empty)
+      return
+    }
+    for meeting in meetings {
+      menu.addItem(menuItem(for: meeting, now: now))
+    }
+  }
+
+  /// Rebuilds everything under the calendar while the menu stays open; the calendar
+  /// item itself stays, so the click that changed the day is not cut short.
+  private func replaceSelectedDay(now: Date) {
+    guard let item = calendar?.item, let menu = item.menu else { return }
+    let index = menu.index(of: item)
+    while menu.numberOfItems > index + 1 {
+      menu.removeItem(at: index + 1)
+    }
+    addSelectedDay(to: menu, now: now)
+    addFooter(to: menu, now: now)
+  }
+
+  private func dayTitle(_ day: Date) -> String {
+    let calendar = Calendar.current
+    return calendar.isDateInToday(day)
+      ? String(localized: "Today")
+      : calendar.isDateInTomorrow(day) ? String(localized: "Tomorrow") : day.formatted(Self.dayFormat)
+  }
+
+  /// How current the meetings are, then settings and quitting.
+  private func addFooter(to menu: NSMenu, now: Date) {
     menu.addItem(.separator())
     if !model.config.accounts.isEmpty {
       addSyncStatus(to: menu, now: now)
@@ -112,11 +231,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     let calendar = Calendar.current
     let byDay = Dictionary(grouping: upcoming) { calendar.startOfDay(for: $0.start) }
     for day in byDay.keys.sorted() {
-      let header =
-        calendar.isDateInToday(day)
-        ? String(localized: "Today")
-        : calendar.isDateInTomorrow(day) ? String(localized: "Tomorrow") : day.formatted(Self.dayFormat)
-      menu.addItem(.sectionHeader(title: header))
+      menu.addItem(.sectionHeader(title: dayTitle(day)))
       for meeting in byDay[day]! {
         menu.addItem(menuItem(for: meeting, now: now))
       }
