@@ -85,6 +85,16 @@ private struct GeneralPage: View {
   @ObservedObject var model: AppModel
 
   var body: some View {
+    SettingsGroup("Menu bar") {
+      SettingsRow(
+        "Show meeting title",
+        description: "When off, the icon and countdown stay visible."
+      ) {
+        Toggle("Show meeting title", isOn: binding(\.showMeetingTitleInMenuBar))
+          .toggleStyle(.switch)
+          .labelsHidden()
+      }
+    }
     SettingsGroup("Cut-in") {
       SettingsRow(
         "Show before a meeting",
