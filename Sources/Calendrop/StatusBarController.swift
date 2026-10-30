@@ -14,7 +14,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
   private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
   private let model: AppModel
   private weak var actions: StatusBarActions?
-  private static let titleLength = 24
   /// "Wed, Oct 21", in the language of the rest of the menu.
   private static let dayFormat = Date.FormatStyle.dateTime.weekday(.abbreviated).month(.abbreviated).day()
 
@@ -35,12 +34,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     if button.image?.accessibilityDescription != description {
       button.image = Self.icon(attention: model.needsAttention, description: description)
     }
-    if let next = model.policy.nextMeeting(in: model.meetings, now: now) {
-      let title = Countdown.truncate(next.title, to: Self.titleLength)
-      button.title = " \(title) · \(Countdown.short(next.start.timeIntervalSince(now)))"
-    } else {
-      button.title = ""
-    }
+    let label = MenuBarLabel.text(
+      meeting: model.policy.nextMeeting(in: model.meetings, now: now),
+      now: now, showTitle: model.config.showMeetingTitleInMenuBar)
+    button.title = label.map { " \($0)" } ?? ""
   }
 
   // MARK: NSMenuDelegate

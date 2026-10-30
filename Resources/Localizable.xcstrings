@@ -856,6 +856,16 @@
         }
       }
     },
+    "Menu bar" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メニューバー"
+          }
+        }
+      }
+    },
     "Mono" : {
       "localizations" : {
         "ja" : {
@@ -1212,6 +1222,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Finder に表示"
+          }
+        }
+      }
+    },
+    "Show meeting title" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会議のタイトルを表示"
           }
         }
       }
@@ -1592,6 +1612,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "オフにすると割り込みはすぐに現れます。ふだんは近い端から滑り込むコンパクトカードも同様です。システム設定で「視差効果を減らす」がオンのときは、どちらもフェードインします。"
+          }
+        }
+      }
+    },
+    "When off, the icon and countdown stay visible." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフにしても、アイコンと開始までの残り時間は表示されます。"
           }
         }
       }

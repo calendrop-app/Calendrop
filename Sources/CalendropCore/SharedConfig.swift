@@ -16,10 +16,11 @@ public struct SharedConfig: Codable, Equatable, Sendable {
   public var cutInDuringCall = CutinPresentation.compact
   public var coverAfterCall = true
   public var appearance = CutinAppearance()
+  public var showMeetingTitleInMenuBar = true
 
   private enum CodingKeys: String, CodingKey {
     case accounts, leadMinutes, cutInWithoutJoinLink, cutInWithoutAcceptance, cutInDuringCall, coverAfterCall,
-      appearance
+      appearance, showMeetingTitleInMenuBar
   }
 
   public var callAwareness: CallAwareness {
@@ -41,6 +42,8 @@ public struct SharedConfig: Codable, Equatable, Sendable {
       (try? c.decodeIfPresent(CutinPresentation.self, forKey: .cutInDuringCall)) ?? defaults.cutInDuringCall
     coverAfterCall = try c.decodeIfPresent(Bool.self, forKey: .coverAfterCall) ?? defaults.coverAfterCall
     appearance = (try? c.decodeIfPresent(CutinAppearance.self, forKey: .appearance)) ?? defaults.appearance
+    showMeetingTitleInMenuBar =
+      try c.decodeIfPresent(Bool.self, forKey: .showMeetingTitleInMenuBar) ?? defaults.showMeetingTitleInMenuBar
   }
 
   /// Skips an entry it cannot read rather than losing every account to one hand-edit

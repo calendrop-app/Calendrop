@@ -10,6 +10,21 @@ import Testing
     return dir
   }
 
+  @Test func showsMenuBarTitlesForNewAndExistingConfigurations() throws {
+    #expect(SharedConfig().showMeetingTitleInMenuBar)
+    let older = try JSONDecoder().decode(SharedConfig.self, from: Data("{}".utf8))
+    #expect(older.showMeetingTitleInMenuBar)
+  }
+
+  @Test(arguments: [true, false])
+  func persistsMenuBarTitleVisibility(shown: Bool) throws {
+    let store = ConfigStore(url: try tempDir().appendingPathComponent("config.json"))
+    var config = SharedConfig()
+    config.showMeetingTitleInMenuBar = shown
+    try store.save(config)
+    #expect(store.load().showMeetingTitleInMenuBar == shown)
+  }
+
   @Test func missingFileYieldsDefaults() throws {
     let store = ConfigStore(url: try tempDir().appendingPathComponent("nested/config.json"))
     #expect(store.load() == SharedConfig())
