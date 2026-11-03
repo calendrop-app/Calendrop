@@ -71,6 +71,33 @@ import Testing
     #expect(config.cutInDuringCall == SharedConfig().cutInDuringCall)
   }
 
+  @Test func showsAMonthInTheMenuByDefault() throws {
+    #expect(SharedConfig().menuCalendar == .month)
+    let older = try JSONDecoder().decode(SharedConfig.self, from: Data("{}".utf8))
+    #expect(older.menuCalendar == .month)
+  }
+
+  @Test(arguments: MenuCalendarMode.allCases)
+  func roundTripsTheMenuCalendar(mode: MenuCalendarMode) throws {
+    var config = SharedConfig()
+    config.menuCalendar = mode
+    let decoded = try JSONDecoder().decode(SharedConfig.self, from: JSONEncoder().encode(config))
+    #expect(decoded.menuCalendar == mode)
+  }
+
+  @Test func readsTheMenuCalendarWithoutRetainingAnUnrelatedSetting() throws {
+    let data = Data(#"{"menuCalendar":"week","showMeetingTitleInMenuBar":false}"#.utf8)
+    let config = try JSONDecoder().decode(SharedConfig.self, from: data)
+    #expect(config.menuCalendar == .week)
+    let encoded = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+    #expect(encoded["showMeetingTitleInMenuBar"] == nil)
+  }
+
+  @Test func readsAnUnknownMenuCalendarAsTheDefault() throws {
+    let config = try JSONDecoder().decode(SharedConfig.self, from: Data(#"{"menuCalendar":"year"}"#.utf8))
+    #expect(config.menuCalendar == .month)
+  }
+
   @Test func neverStoresTokensOrClientCredentials() throws {
     let encoded = String(decoding: try JSONEncoder().encode(SharedConfig()), as: UTF8.self).lowercased()
     #expect(!encoded.contains("token"))

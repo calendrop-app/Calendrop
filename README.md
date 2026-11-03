@@ -28,6 +28,8 @@ https://github.com/user-attachments/assets/3710b75f-57e9-44a7-be7e-d54129cfe9dc
   opens a submenu with its time, place, people and description, and actions to
   join its Meet, Zoom, Teams or Webex link, copy the link, or open the event in
   Google Calendar.
+- Optionally, a month or a week above the meetings in the menu; choosing a day
+  lists its meetings.
 - The cut-in appears `n` minutes before the start (configurable, default 2) on
   every display. Plugging or unplugging a display or changing the resolution
   rebuilds it to fit the new screens.

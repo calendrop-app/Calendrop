@@ -53,6 +53,7 @@ The file is a JSON object. Every key is optional and unknown keys are ignored:
 | `cutInWithoutJoinLink` | boolean | `false` | Whether meetings without a video link cut in too |
 | `cutInWithoutAcceptance` | boolean | `true` | Whether meetings answered "maybe" to, or not answered, cut in too |
 | `appearance` | object | the Midnight preset | How the cut-in looks; see below |
+| `menuCalendar` | string | `month` | The calendar above the menu's meetings: `month`, `week`, or `hidden` for none; an unrecognised value counts as `month` |
 
 `accounts` holds one object per account:
 
