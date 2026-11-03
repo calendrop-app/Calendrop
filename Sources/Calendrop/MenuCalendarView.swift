@@ -150,7 +150,7 @@ private struct DayCell: View {
   var body: some View {
     Button(action: select) {
       VStack(spacing: 1) {
-        Text(day.formatted(.dateTime.day()))
+        Text(day, format: .verbatim("\(day: .defaultDigits)", timeZone: .current, calendar: .current))
           .font(.system(size: 12, weight: isToday ? .bold : .regular))
           .monospacedDigit()
           .foregroundStyle(
