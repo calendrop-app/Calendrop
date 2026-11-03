@@ -168,6 +168,16 @@
         }
       }
     },
+    "Always" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常に"
+          }
+        }
+      }
+    },
     "Appearance" : {
       "localizations" : {
         "ja" : {
@@ -656,6 +666,16 @@
         }
       }
     },
+    "Hide" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "非表示"
+          }
+        }
+      }
+    },
     "Hold to dismiss" : {
       "localizations" : {
         "ja" : {
@@ -926,6 +946,16 @@
         }
       }
     },
+    "Never" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "しない"
+          }
+        }
+      }
+    },
     "Next Month" : {
       "localizations" : {
         "ja" : {
@@ -942,6 +972,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "次の週"
+          }
+        }
+      }
+    },
+    "Next meeting" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次の会議"
           }
         }
       }
@@ -1136,6 +1176,16 @@
         }
       }
     },
+    "Private mode" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プライベートモード"
+          }
+        }
+      }
+    },
     "Quit Calendrop" : {
       "localizations" : {
         "ja" : {
@@ -1216,6 +1266,16 @@
         }
       }
     },
+    "Replace the meeting title with Next meeting." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会議名を「次の会議」に置き換えます。"
+          }
+        }
+      }
+    },
     "Reset to “%@”" : {
       "localizations" : {
         "ja" : {
@@ -1232,6 +1292,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今すぐ再起動"
+          }
+        }
+      }
+    },
+    "Right-click to switch when Toggle is selected." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「切り替え」を選ぶと、右クリックで切り替えられます。"
           }
         }
       }
@@ -1296,6 +1366,16 @@
         }
       }
     },
+    "Show" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表示"
+          }
+        }
+      }
+    },
     "Show before a meeting" : {
       "localizations" : {
         "ja" : {
@@ -1312,6 +1392,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Finder に表示"
+          }
+        }
+      }
+    },
+    "Show next meeting" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次の会議を表示"
           }
         }
       }
@@ -1582,6 +1672,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今日"
+          }
+        }
+      }
+    },
+    "Toggle" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切り替え"
           }
         }
       }

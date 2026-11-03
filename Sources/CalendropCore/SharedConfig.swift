@@ -15,12 +15,13 @@ public struct SharedConfig: Codable, Equatable, Sendable {
   public var cutInWithoutAcceptance = true
   public var cutInDuringCall = CutinPresentation.compact
   public var coverAfterCall = true
+  public var menuBar = MenuBarPreferences()
   public var appearance = CutinAppearance()
   public var menuCalendar = MenuCalendarMode.month
 
   private enum CodingKeys: String, CodingKey {
     case accounts, leadMinutes, cutInWithoutJoinLink, cutInWithoutAcceptance, cutInDuringCall, coverAfterCall,
-      appearance, menuCalendar
+      appearance, menuCalendar, menuBar
   }
 
   public var callAwareness: CallAwareness {
@@ -41,6 +42,7 @@ public struct SharedConfig: Codable, Equatable, Sendable {
     cutInDuringCall =
       (try? c.decodeIfPresent(CutinPresentation.self, forKey: .cutInDuringCall)) ?? defaults.cutInDuringCall
     coverAfterCall = try c.decodeIfPresent(Bool.self, forKey: .coverAfterCall) ?? defaults.coverAfterCall
+    menuBar = (try? c.decodeIfPresent(MenuBarPreferences.self, forKey: .menuBar)) ?? defaults.menuBar
     appearance = (try? c.decodeIfPresent(CutinAppearance.self, forKey: .appearance)) ?? defaults.appearance
     menuCalendar = (try? c.decodeIfPresent(MenuCalendarMode.self, forKey: .menuCalendar)) ?? defaults.menuCalendar
   }

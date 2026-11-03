@@ -180,7 +180,28 @@ private struct GeneralPage: View {
           .disabled(model.config.cutInDuringCall == .fullScreen)
       }
     }
+    SettingsGroup("Menu bar") {
+      SettingsRow("Show next meeting", description: "Right-click to switch when Toggle is selected.") {
+        Picker("", selection: binding(\.menuBar.visibility)) {
+          Text("Show").tag(MenuBarPreferences.Visibility.show)
+          Text("Hide").tag(MenuBarPreferences.Visibility.hide)
+          Text("Toggle").tag(MenuBarPreferences.Visibility.toggle)
+        }
+        .labelsHidden()
+      }
+      SettingsRow("Private mode", description: "Replace the meeting title with Next meeting.") {
+        Picker("", selection: binding(\.menuBar.privacy)) {
+          Text("Always").tag(MenuBarPreferences.Privacy.always)
+          Text("Never").tag(MenuBarPreferences.Privacy.never)
+          Text("Toggle").tag(MenuBarPreferences.Privacy.toggle)
+            .disabled(model.config.menuBar.visibility == .toggle)
+        }
+        .labelsHidden()
+        .disabled(model.config.menuBar.visibility == .hide)
+      }
+    }
     LanguageGroup()
+
   }
 
   private func minutes(_ n: Int) -> String {
