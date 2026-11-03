@@ -1,4 +1,5 @@
 import AppKit
+import CalendropCore
 
 /// The language given to Calendrop alone. It is kept where System Settings keeps the
 /// one it sets per app, so either place shows what the other chose.
@@ -8,7 +9,7 @@ enum InterfaceLanguage {
 
   /// Every language the app bundle has a translation for.
   static var available: [String] {
-    Bundle.main.localizations.filter { $0 != "Base" }.sorted()
+    Localizations.selectable(from: Bundle.main.localizations)
   }
 
   /// The language the interface is in, chosen by macOS at launch.
