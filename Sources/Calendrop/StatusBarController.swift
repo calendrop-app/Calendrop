@@ -14,6 +14,8 @@ protocol StatusBarActions: AnyObject {
 @MainActor
 final class StatusBarController: NSObject, NSMenuDelegate {
   private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+  private let menu = NSMenu()
+  private var preferences = MenuBarPreferences()
   private let model: AppModel
   private weak var actions: StatusBarActions?
   private static let titleLength = 24
@@ -28,9 +30,11 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     self.actions = actions
     super.init()
     item.button?.imagePosition = .imageLeading
-    let menu = NSMenu()
+    item.button?.target = self
+    item.button?.action = #selector(clicked)
+    item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
     menu.delegate = self
-    item.menu = menu
+
     updateTitle(now: Date())
   }
 
@@ -40,12 +44,28 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     if button.image?.accessibilityDescription != description {
       button.image = Self.icon(attention: model.needsAttention, description: description)
     }
-    if let next = model.policy.nextMeeting(in: model.meetings, now: now) {
-      let title = Countdown.truncate(next.title, to: Self.titleLength)
+    preferences.visibility = model.config.menuBar.visibility
+    preferences.privacy = model.config.menuBar.privacy
+    if preferences.showsMeeting, let next = model.policy.nextMeeting(in: model.meetings, now: now) {
+      let title =
+        preferences.hidesTitle
+        ? String(localized: "Next meeting") : Countdown.truncate(next.title, to: Self.titleLength)
       button.title = " \(title) · \(Countdown.short(next.start.timeIntervalSince(now)))"
     } else {
       button.title = ""
     }
+  }
+
+  @objc private func clicked() {
+    if NSApp.currentEvent?.type == .rightMouseUp {
+      preferences.rightClick()
+      updateTitle(now: Date())
+      return
+    }
+    guard let button = item.button else { return }
+    item.menu = menu
+    button.performClick(nil)
+    item.menu = nil
   }
 
   // MARK: NSMenuDelegate
