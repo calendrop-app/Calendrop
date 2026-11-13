@@ -26,6 +26,6 @@ jobs:
           persist-credentials: false
       # Findings fail the job instead of going to code scanning, so a pull
       # request cannot merge with one.
-      - uses: zizmorcore/zizmor-action@v0.8.0
+      - uses: zizmorcore/zizmor-action@v0.8.1
         with:
           advanced-security: false
