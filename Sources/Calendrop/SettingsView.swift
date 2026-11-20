@@ -155,6 +155,34 @@ private struct GeneralPage: View {
         .help("0 shows the cut-in when the meeting starts.")
       }
       SettingsRow(
+        "Sound",
+        description: "Played when a meeting comes due, unless its cut-in is held back during a call."
+      ) {
+        Picker(
+          "",
+          selection: Binding(
+            get: { model.config.cutInSound },
+            set: { sound in
+              model.updateConfig { $0.cutInSound = sound }
+              sound.play()
+            })
+        ) {
+          ForEach(CutinSound.choices, id: \.self) { sound in
+            if let name = sound.systemName {
+              Text(verbatim: name).tag(sound)
+            } else {
+              Text("None").tag(sound)
+            }
+          }
+          // A sound chosen on another Mac that this one does not offer stays chosen.
+          if !CutinSound.choices.contains(model.config.cutInSound), let name = model.config.cutInSound.systemName {
+            Text(verbatim: name).tag(model.config.cutInSound)
+          }
+        }
+        .labelsHidden()
+        .fixedSize()
+      }
+      SettingsRow(
         "Meetings without a video link",
         description:
           "Also cut in for meetings with nothing to join, such as in-person ones. Their cut-in closes with OK."

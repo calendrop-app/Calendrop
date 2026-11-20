@@ -74,6 +74,14 @@ never count as real
 meetings. One trial carries long titles in many scripts, to check how they
 wrap and shorten. A real meeting that comes due during a trial replaces it.
 
+## Sound
+
+The user can pick one of macOS's alert sounds for the cut-in, or none, which
+is where it starts. The sound plays once when a meeting comes due and its
+cut-in appears, full screen or as the compact card; a cut-in held back during
+a call is silent, and so is one that only changes form when the call ends.
+Picking a sound in settings plays it.
+
 ## How it ends
 
 Only by the user:

@@ -87,9 +87,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, StatusBarActions {
     }
     let arriving = arrivals.arrive(
       model.policy.meetingsToCutIn(model.meetings, now: now, acknowledged: model.acknowledged))
-    presenter.show(
-      meetings,
-      as: awareness.presentation(inCall: inCall, showing: held.isEmpty ? nil : showing, arriving: arriving))
+    let presentation = awareness.presentation(
+      inCall: inCall, showing: held.isEmpty ? nil : showing, arriving: arriving)
+    presenter.show(meetings, as: presentation)
+    if model.config.cutInSound.plays(arriving: arriving, as: presentation) { model.config.cutInSound.play() }
     presenter.syncWithScreens(force: false)
   }
 
