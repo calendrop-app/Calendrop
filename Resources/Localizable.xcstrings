@@ -1046,6 +1046,16 @@
         }
       }
     },
+    "None" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "なし"
+          }
+        }
+      }
+    },
     "None — these settings are not saved and are forgotten when Calendrop quits." : {
       "localizations" : {
         "ja" : {
@@ -1152,6 +1162,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重複"
+          }
+        }
+      }
+    },
+    "Played when a meeting comes due, unless its cut-in is held back during a call." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会議の時間になったときに鳴らします。通話中に控えたカットインでは鳴りません。"
           }
         }
       }
@@ -1562,6 +1582,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "サインインしました。このタブを閉じて Calendrop に戻ってください。"
+          }
+        }
+      }
+    },
+    "Sound" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サウンド"
           }
         }
       }
