@@ -148,6 +148,16 @@
         }
       }
     },
+    "Allow Calendrop under Login Items in System Settings." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システム設定の「ログイン項目」で Calendrop を許可してください。"
+          }
+        }
+      }
+    },
     "Also cut in for meetings with nothing to join, such as in-person ones. Their cut-in closes with OK." : {
       "localizations" : {
         "ja" : {
@@ -414,6 +424,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選んでいるプリセットをカスタムスタイルにコピーし、色とフォントを調整します。"
+          }
+        }
+      }
+    },
+    "Could not change Login Items: %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログイン項目を変更できませんでした: %@"
           }
         }
       }
@@ -1076,6 +1096,26 @@
         }
       }
     },
+    "Open System Settings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システム設定を開く"
+          }
+        }
+      }
+    },
+    "Open at login" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログイン時に開く"
+          }
+        }
+      }
+    },
     "Open in Google Calendar" : {
       "localizations" : {
         "ja" : {
@@ -1566,12 +1606,32 @@
         }
       }
     },
+    "Starts Calendrop when you log in to this Mac, so no meeting slips by before you open it." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この Mac にログインしたときに Calendrop を起動し、開き忘れて会議を逃さないようにします。"
+          }
+        }
+      }
+    },
     "Starts in %@" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "あと %@ で開始"
+          }
+        }
+      }
+    },
+    "Startup" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "起動"
           }
         }
       }

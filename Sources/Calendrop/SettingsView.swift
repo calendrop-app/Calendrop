@@ -198,6 +198,7 @@ private struct GeneralPage: View {
           .disabled(model.config.cutInDuringCall == .fullScreen)
       }
     }
+    StartupGroup()
     LanguageGroup()
 
   }
@@ -208,6 +209,53 @@ private struct GeneralPage: View {
 
   private func binding<T>(_ keyPath: WritableKeyPath<SharedConfig, T>) -> Binding<T> {
     Binding(get: { model.config[keyPath: keyPath] }, set: { v in model.updateConfig { $0[keyPath: keyPath] = v } })
+  }
+}
+
+/// Read again whenever Calendrop comes forward, since the user may have changed it in
+/// System Settings meanwhile.
+private struct StartupGroup: View {
+  @State private var state = LoginItem.state
+  @State private var error: String?
+
+  var body: some View {
+    SettingsGroup("Startup") {
+      SettingsRow(
+        "Open at login",
+        description: "Starts Calendrop when you log in to this Mac, so no meeting slips by before you open it."
+      ) {
+        Toggle(
+          "",
+          isOn: Binding(
+            get: { state == .on || state == .needsApproval },
+            set: { on in
+              do {
+                try LoginItem.set(on)
+                error = nil
+              } catch {
+                self.error = String(localized: "Could not change Login Items: \(error.localizedDescription)")
+              }
+              state = LoginItem.state
+            })
+        )
+        .toggleStyle(.switch)
+        .labelsHidden()
+      }
+    } footer: {
+      VStack(alignment: .trailing, spacing: 8) {
+        if state == .needsApproval {
+          HStack(spacing: 8) {
+            Text("Allow Calendrop under Login Items in System Settings.")
+              .foregroundStyle(.secondary)
+            Button("Open System Settings") { LoginItem.openSystemSettings() }
+          }
+        }
+        if let error { SettingsWarning(message: error) }
+      }
+    }
+    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+      state = LoginItem.state
+    }
   }
 }
 
